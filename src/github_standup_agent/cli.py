@@ -4,8 +4,12 @@ import asyncio
 from typing import Annotated
 
 import typer
+from dotenv import load_dotenv
 from rich.console import Console
 from rich.panel import Panel
+
+# Load .env file early before any other imports that might use env vars
+load_dotenv()
 
 from github_standup_agent import __version__
 from github_standup_agent.config import StandupConfig, get_github_username

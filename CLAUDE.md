@@ -78,3 +78,17 @@ Environment variables:
 - `STANDUP_COORDINATOR_MODEL`, `STANDUP_DATA_GATHERER_MODEL`, `STANDUP_SUMMARIZER_MODEL`
 
 Config file: `~/.config/standup-agent/config.json`
+
+## PostHog Instrumentation (optional)
+
+Enable agent tracing to PostHog by setting environment variables:
+- `POSTHOG_API_KEY` - Enables PostHog agent tracing when set
+- `POSTHOG_HOST` - PostHog host (default: https://us.posthog.com)
+- `POSTHOG_DISTINCT_ID` - User identifier (defaults to github_username)
+
+Install the PostHog SDK:
+```bash
+uv pip install posthog>=7.6.0
+# Or for local development with unreleased features:
+uv pip install -e ../posthog-python
+```

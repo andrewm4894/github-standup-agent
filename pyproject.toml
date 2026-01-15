@@ -25,6 +25,7 @@ dependencies = [
     "typer>=0.12.0",
     "pydantic>=2.0",
     "pydantic-settings>=2.0",
+    "python-dotenv>=1.0.0",
     "rich>=13.0",
     "pyperclip>=1.8.0",
 ]
@@ -35,6 +36,9 @@ dev = [
     "pytest-asyncio>=0.23.0",
     "ruff>=0.4.0",
     "mypy>=1.0",
+]
+posthog = [
+    "posthog>=7.5.0",  # For local dev with openai_agents, install ../posthog-python
 ]
 
 [project.scripts]
