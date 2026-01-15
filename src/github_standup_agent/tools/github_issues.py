@@ -5,14 +5,14 @@ import subprocess
 from datetime import datetime, timedelta
 from typing import Annotated, Any
 
-from agents import function_tool
+from agents import RunContextWrapper, function_tool
 
 from github_standup_agent.context import StandupContext
 
 
 @function_tool
 def get_my_issues(
-    context: StandupContext,
+    ctx: RunContextWrapper[StandupContext],
     days_back: Annotated[int, "Number of days to look back for issues"] = 7,
     include_assigned: Annotated[bool, "Include issues assigned to you"] = True,
     include_created: Annotated[bool, "Include issues you created"] = True,
@@ -22,7 +22,7 @@ def get_my_issues(
 
     Returns issues that are open or were recently closed.
     """
-    username = context.github_username or "@me"
+    username = ctx.context.github_username or "@me"
     cutoff_date = datetime.now() - timedelta(days=days_back)
 
     all_issues: list[dict[str, Any]] = []
@@ -85,7 +85,7 @@ def get_my_issues(
             pass
 
     # Store in context
-    context.collected_issues = all_issues
+    ctx.context.collected_issues = all_issues
 
     if not all_issues:
         return "No issues found in the specified time range."

@@ -2,14 +2,14 @@
 
 from typing import Annotated
 
-from agents import function_tool
+from agents import RunContextWrapper, function_tool
 
 from github_standup_agent.context import StandupContext
 
 
 @function_tool
 def copy_to_clipboard(
-    context: StandupContext,
+    ctx: RunContextWrapper[StandupContext],
     text: Annotated[str | None, "Text to copy. Defaults to current standup."] = None,
 ) -> str:
     """
@@ -19,7 +19,7 @@ def copy_to_clipboard(
     """
     import pyperclip
 
-    content = text or context.current_standup
+    content = text or ctx.context.current_standup
 
     if not content:
         return "No content to copy. Generate a standup first."

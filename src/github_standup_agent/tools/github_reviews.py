@@ -4,14 +4,14 @@ import json
 import subprocess
 from typing import Annotated, Any
 
-from agents import function_tool
+from agents import RunContextWrapper, function_tool
 
 from github_standup_agent.context import StandupContext
 
 
 @function_tool
 def get_my_reviews(
-    context: StandupContext,
+    ctx: RunContextWrapper[StandupContext],
     include_given: Annotated[bool, "Include reviews you gave on others' PRs"] = True,
     include_received: Annotated[bool, "Include reviews on your PRs"] = True,
 ) -> str:
@@ -20,7 +20,7 @@ def get_my_reviews(
 
     Shows PRs you've reviewed and reviews received on your PRs.
     """
-    username = context.github_username or "@me"
+    username = ctx.context.github_username or "@me"
     all_reviews: list[dict[str, Any]] = []
 
     # Reviews given (PRs you reviewed)
@@ -73,7 +73,7 @@ def get_my_reviews(
             pass
 
     # Store in context
-    context.collected_reviews = all_reviews
+    ctx.context.collected_reviews = all_reviews
 
     if not all_reviews:
         return "No code review activity found."

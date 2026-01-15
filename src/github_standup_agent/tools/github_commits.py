@@ -5,14 +5,14 @@ import subprocess
 from datetime import datetime, timedelta
 from typing import Annotated, Any
 
-from agents import function_tool
+from agents import RunContextWrapper, function_tool
 
 from github_standup_agent.context import StandupContext
 
 
 @function_tool
 def get_my_commits(
-    context: StandupContext,
+    ctx: RunContextWrapper[StandupContext],
     days_back: Annotated[int, "Number of days to look back for commits"] = 1,
 ) -> str:
     """
@@ -20,7 +20,7 @@ def get_my_commits(
 
     Uses GitHub search to find commits across repositories.
     """
-    username = context.github_username
+    username = ctx.context.github_username
 
     if not username:
         return "GitHub username not available. Cannot search commits."
@@ -53,7 +53,7 @@ def get_my_commits(
         commits = json.loads(result.stdout)
 
         # Store in context
-        context.collected_commits = commits
+        ctx.context.collected_commits = commits
 
         # Format output
         lines = [f"Found {len(commits)} commit(s):\n"]

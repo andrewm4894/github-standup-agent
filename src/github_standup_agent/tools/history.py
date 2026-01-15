@@ -2,7 +2,7 @@
 
 from typing import Annotated
 
-from agents import function_tool
+from agents import RunContextWrapper, function_tool
 
 from github_standup_agent.context import StandupContext
 from github_standup_agent.db import StandupDatabase
@@ -10,7 +10,7 @@ from github_standup_agent.db import StandupDatabase
 
 @function_tool
 def get_recent_standups(
-    context: StandupContext,
+    ctx: RunContextWrapper[StandupContext],
     days: Annotated[int, "Number of recent standups to retrieve"] = 3,
 ) -> str:
     """
@@ -26,7 +26,7 @@ def get_recent_standups(
         return "No previous standups found in history."
 
     # Store in context
-    context.recent_standups = standups
+    ctx.context.recent_standups = standups
 
     # Format for the agent
     lines = [f"Found {len(standups)} recent standup(s):\n"]
@@ -45,7 +45,7 @@ def get_recent_standups(
 
 @function_tool
 def save_standup(
-    context: StandupContext,
+    ctx: RunContextWrapper[StandupContext],
     summary: Annotated[str | None, "Summary to save. Defaults to current standup."] = None,
 ) -> str:
     """
@@ -53,7 +53,7 @@ def save_standup(
 
     This persists the standup for future reference and continuity.
     """
-    content = summary or context.current_standup
+    content = summary or ctx.context.current_standup
 
     if not content:
         return "No standup to save. Generate one first."
@@ -62,10 +62,10 @@ def save_standup(
 
     # Collect raw data from context
     raw_data = {
-        "prs": context.collected_prs,
-        "issues": context.collected_issues,
-        "commits": context.collected_commits,
-        "reviews": context.collected_reviews,
+        "prs": ctx.context.collected_prs,
+        "issues": ctx.context.collected_issues,
+        "commits": ctx.context.collected_commits,
+        "reviews": ctx.context.collected_reviews,
     }
 
     db.save(summary=content, raw_data=raw_data)

@@ -5,14 +5,14 @@ import subprocess
 from datetime import datetime, timedelta
 from typing import Annotated, Any
 
-from agents import function_tool
+from agents import RunContextWrapper, function_tool
 
 from github_standup_agent.context import StandupContext
 
 
 @function_tool
 def get_my_prs(
-    context: StandupContext,
+    ctx: RunContextWrapper[StandupContext],
     days_back: Annotated[int, "Number of days to look back for PRs"] = 1,
     include_open: Annotated[bool, "Include currently open PRs"] = True,
     include_merged: Annotated[bool, "Include recently merged PRs"] = True,
@@ -22,7 +22,7 @@ def get_my_prs(
 
     Returns PRs that were created, updated, or merged within the specified time range.
     """
-    username = context.github_username or "@me"
+    username = ctx.context.github_username or "@me"
     cutoff_date = datetime.now() - timedelta(days=days_back)
 
     all_prs: list[dict[str, Any]] = []
@@ -83,7 +83,7 @@ def get_my_prs(
             pass
 
     # Store in context for later use
-    context.collected_prs = all_prs
+    ctx.context.collected_prs = all_prs
 
     if not all_prs:
         return "No pull requests found in the specified time range."

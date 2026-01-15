@@ -4,7 +4,7 @@ import json
 import subprocess
 from typing import Annotated
 
-from agents import function_tool
+from agents import RunContextWrapper, function_tool
 
 from github_standup_agent.context import StandupContext
 
@@ -33,7 +33,7 @@ query($username: String!) {
 
 @function_tool
 def get_activity_summary(
-    context: StandupContext,
+    ctx: RunContextWrapper[StandupContext],
     days_back: Annotated[int, "Number of days to summarize"] = 7,
 ) -> str:
     """
@@ -42,7 +42,7 @@ def get_activity_summary(
     Uses GraphQL to fetch contribution statistics including commits,
     PRs, reviews, and issues.
     """
-    username = context.github_username
+    username = ctx.context.github_username
 
     if not username:
         return "GitHub username not available. Cannot fetch activity summary."
