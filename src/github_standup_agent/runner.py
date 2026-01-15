@@ -1,16 +1,15 @@
 """Runner module for executing the standup agent workflow."""
 
 import os
-from typing import AsyncIterator
 
-from agents import Runner, RunConfig
+from agents import RunConfig, Runner
 from rich.console import Console
 from rich.prompt import Prompt
 
 from github_standup_agent.agents.coordinator import create_coordinator_agent
 from github_standup_agent.config import StandupConfig
 from github_standup_agent.context import StandupContext
-from github_standup_agent.hooks import StandupRunHooks, StandupAgentHooks
+from github_standup_agent.hooks import StandupRunHooks
 
 console = Console()
 
@@ -61,14 +60,13 @@ async def run_standup_generation(
 
 First, gather all my GitHub activity data, then create a concise standup summary.
 
-{"Also check my recent standups for context to maintain continuity and avoid repetition." if with_history else ""}
+{"Check my recent standups to maintain continuity." if with_history else ""}
 
 After generating the summary, save it to history.
 """
 
     # Create hooks
     run_hooks = StandupRunHooks(verbose=verbose)
-    agent_hooks = StandupAgentHooks(verbose=verbose)
 
     # Run configuration
     run_config = RunConfig(
@@ -151,7 +149,9 @@ async def run_interactive_chat(
         trace_include_sensitive_data=False,
     )
 
-    console.print(f"\n[dim]GitHub user: {github_username} | Looking back: {days_back} day(s)[/dim]\n")
+    console.print(
+        f"\n[dim]GitHub user: {github_username} | Looking back: {days_back} day(s)[/dim]\n"
+    )
 
     # Chat loop
     conversation_history: list[dict] = []

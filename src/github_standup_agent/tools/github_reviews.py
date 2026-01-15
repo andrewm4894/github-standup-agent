@@ -89,7 +89,8 @@ def get_my_reviews(
         for pr in given[:5]:
             author = pr.get("author", {}).get("login", "unknown")
             decision = pr.get("reviewDecision", "PENDING")
-            emoji = {"APPROVED": "✅", "CHANGES_REQUESTED": "🔄", "COMMENTED": "💬"}.get(decision, "⏳")
+            emoji_map = {"APPROVED": "✅", "CHANGES_REQUESTED": "🔄", "COMMENTED": "💬"}
+            emoji = emoji_map.get(decision, "⏳")
             lines.append(f"   {emoji} #{pr['number']}: {pr['title']} (by @{author})")
 
     if received:

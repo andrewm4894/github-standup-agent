@@ -35,7 +35,9 @@ def get_my_prs(
                     "gh", "pr", "list",
                     "--author", username,
                     "--state", "open",
-                    "--json", "number,title,url,state,createdAt,updatedAt,baseRefName,headRefName,isDraft,additions,deletions",
+                    "--json",
+                    "number,title,url,state,createdAt,updatedAt,baseRefName,"
+                    "headRefName,isDraft,additions,deletions",
                     "--limit", "50",
                 ],
                 capture_output=True,
@@ -58,7 +60,9 @@ def get_my_prs(
                     "gh", "pr", "list",
                     "--author", username,
                     "--state", "merged",
-                    "--json", "number,title,url,state,createdAt,updatedAt,mergedAt,baseRefName,headRefName,additions,deletions",
+                    "--json",
+                    "number,title,url,state,createdAt,updatedAt,mergedAt,"
+                    "baseRefName,headRefName,additions,deletions",
                     "--limit", "50",
                 ],
                 capture_output=True,

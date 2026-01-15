@@ -10,7 +10,7 @@ from github_standup_agent.context import StandupContext
 @function_tool
 def copy_to_clipboard(
     context: StandupContext,
-    text: Annotated[str | None, "Text to copy. If not provided, copies the current standup."] = None,
+    text: Annotated[str | None, "Text to copy. Defaults to current standup."] = None,
 ) -> str:
     """
     Copy text to the system clipboard.

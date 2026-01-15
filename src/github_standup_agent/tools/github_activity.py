@@ -8,7 +8,6 @@ from agents import function_tool
 
 from github_standup_agent.context import StandupContext
 
-
 ACTIVITY_QUERY = """
 query($username: String!) {
   user(login: $username) {

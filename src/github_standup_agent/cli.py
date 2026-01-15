@@ -1,7 +1,7 @@
 """CLI interface for GitHub Standup Agent."""
 
 import asyncio
-from typing import Annotated, Optional
+from typing import Annotated
 
 import typer
 from rich.console import Console
@@ -29,7 +29,7 @@ def version_callback(value: bool) -> None:
 @app.callback()
 def main(
     version: Annotated[
-        Optional[bool],
+        bool | None,
         typer.Option(
             "--version",
             "-v",
@@ -76,7 +76,9 @@ def generate(
         )
         raise typer.Exit(1)
 
-    console.print(f"[dim]Generating standup for [bold]{github_user}[/bold] ({days} day(s))...[/dim]")
+    console.print(
+        f"[dim]Generating standup for [bold]{github_user}[/bold] ({days} day(s))...[/dim]"
+    )
 
     try:
         result = asyncio.run(
@@ -156,15 +158,15 @@ def config(
         typer.Option("--show", help="Show current configuration."),
     ] = False,
     set_openai_key: Annotated[
-        Optional[str],
+        str | None,
         typer.Option("--set-openai-key", help="Set OpenAI API key."),
     ] = None,
     set_github_user: Annotated[
-        Optional[str],
+        str | None,
         typer.Option("--set-github-user", help="Set GitHub username."),
     ] = None,
     set_model: Annotated[
-        Optional[str],
+        str | None,
         typer.Option("--set-model", help="Set the summarizer model."),
     ] = None,
 ) -> None:
@@ -172,7 +174,6 @@ def config(
     cfg = StandupConfig.load()
 
     if set_openai_key:
-        import os
 
         # For security, we only set this in environment, not in file
         console.print(
@@ -195,9 +196,10 @@ def config(
 
     if show or not any([set_openai_key, set_github_user, set_model]):
         detected_user = get_github_username()
+        api_key_status = "Set" if cfg.openai_api_key else "Not set (check env)"
         console.print(Panel(
             f"[bold]GitHub Username:[/bold] {cfg.github_username or detected_user or 'Not set'}\n"
-            f"[bold]OpenAI API Key:[/bold] {'Set' if cfg.openai_api_key else 'Not set (check OPENAI_API_KEY env)'}\n"
+            f"[bold]OpenAI API Key:[/bold] {api_key_status}\n"
             f"[bold]Default Days:[/bold] {cfg.default_days_back}\n"
             f"[bold]Coordinator Model:[/bold] {cfg.coordinator_model}\n"
             f"[bold]Data Gatherer Model:[/bold] {cfg.data_gatherer_model}\n"
@@ -215,7 +217,7 @@ def history(
         typer.Option("--list", "-l", help="List past standups."),
     ] = False,
     date: Annotated[
-        Optional[str],
+        str | None,
         typer.Option("--date", help="Show standup for a specific date (YYYY-MM-DD)."),
     ] = None,
     clear: Annotated[
@@ -237,7 +239,9 @@ def history(
     if date:
         standup = db.get_by_date(date)
         if standup:
-            console.print(Panel(standup["summary"], title=f"Standup for {date}", border_style="green"))
+            console.print(
+                Panel(standup["summary"], title=f"Standup for {date}", border_style="green")
+            )
         else:
             console.print(f"[yellow]No standup found for {date}[/yellow]")
         return

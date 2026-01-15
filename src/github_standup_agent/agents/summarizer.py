@@ -1,8 +1,7 @@
 """Summarizer Agent - generates standup summaries from collected data."""
 
-from pydantic import BaseModel, Field
-
 from agents import Agent, ModelSettings
+from pydantic import BaseModel, Field
 
 from github_standup_agent.context import StandupContext
 from github_standup_agent.tools.clipboard import copy_to_clipboard
@@ -12,8 +11,8 @@ from github_standup_agent.tools.history import get_recent_standups, save_standup
 class StandupSummary(BaseModel):
     """Structured output for a standup summary."""
 
-    yesterday: str = Field(description="What was worked on (completed work, merged PRs, closed issues)")
-    today: str = Field(description="What will be worked on (open PRs, assigned issues, planned work)")
+    yesterday: str = Field(description="What was worked on (completed work, merged PRs)")
+    today: str = Field(description="What will be worked on (open PRs, assigned issues)")
     blockers: str = Field(description="Any blockers or challenges (empty string if none)")
     formatted_summary: str = Field(description="Full formatted standup ready for sharing")
 

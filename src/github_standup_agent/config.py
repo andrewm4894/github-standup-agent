@@ -2,7 +2,6 @@
 
 import os
 from pathlib import Path
-from typing import Optional
 
 from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -23,13 +22,13 @@ class StandupConfig(BaseSettings):
     )
 
     # API Key (required)
-    openai_api_key: Optional[SecretStr] = Field(
+    openai_api_key: SecretStr | None = Field(
         default=None,
         validation_alias="OPENAI_API_KEY",
     )
 
     # GitHub settings
-    github_username: Optional[str] = None  # Auto-detected from `gh auth status` if not set
+    github_username: str | None = None  # Auto-detected from `gh auth status` if not set
 
     # Agent settings
     default_days_back: int = 1
@@ -50,7 +49,6 @@ class StandupConfig(BaseSettings):
         """Save configuration to file."""
         CONFIG_DIR.mkdir(parents=True, exist_ok=True)
         # Don't save the API key to file for security
-        data = self.model_dump(exclude={"openai_api_key"})
         CONFIG_FILE.write_text(
             self.model_dump_json(indent=2, exclude={"openai_api_key"})
         )
@@ -77,7 +75,7 @@ class StandupConfig(BaseSettings):
         return self.openai_api_key.get_secret_value()
 
 
-def get_github_username() -> Optional[str]:
+def get_github_username() -> str | None:
     """Get the GitHub username from gh CLI."""
     import subprocess
 

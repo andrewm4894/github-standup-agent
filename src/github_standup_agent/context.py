@@ -1,7 +1,7 @@
 """Context management for passing data through agent workflow."""
 
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any
 
 from github_standup_agent.config import StandupConfig
 
@@ -31,7 +31,7 @@ class StandupContext:
     recent_standups: list[dict[str, Any]] = field(default_factory=list)
 
     # Current standup being generated/refined
-    current_standup: Optional[str] = None
+    current_standup: str | None = None
 
     # GitHub username (auto-detected or from config)
-    github_username: Optional[str] = None
+    github_username: str | None = None

@@ -3,12 +3,11 @@
 from agents import Agent, ModelSettings
 
 from github_standup_agent.context import StandupContext
-from github_standup_agent.tools.github_prs import get_my_prs
-from github_standup_agent.tools.github_issues import get_my_issues
-from github_standup_agent.tools.github_commits import get_my_commits
-from github_standup_agent.tools.github_reviews import get_my_reviews
 from github_standup_agent.tools.github_activity import get_activity_summary
-
+from github_standup_agent.tools.github_commits import get_my_commits
+from github_standup_agent.tools.github_issues import get_my_issues
+from github_standup_agent.tools.github_prs import get_my_prs
+from github_standup_agent.tools.github_reviews import get_my_reviews
 
 DATA_GATHERER_INSTRUCTIONS = """You are a GitHub data gathering specialist. Your job is to collect
 comprehensive information about a user's GitHub activity.

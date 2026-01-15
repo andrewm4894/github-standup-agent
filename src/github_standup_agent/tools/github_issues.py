@@ -94,7 +94,7 @@ def get_my_issues(
     lines = [f"Found {len(all_issues)} issue(s):\n"]
     for issue in all_issues:
         status_emoji = "🔵" if issue["state"] == "OPEN" else "⚫"
-        labels = ", ".join(l["name"] for l in issue.get("labels", [])) or "no labels"
+        labels = ", ".join(lbl["name"] for lbl in issue.get("labels", [])) or "no labels"
         lines.append(
             f"{status_emoji} #{issue['number']}: {issue['title']}\n"
             f"   State: {issue['state']} | Labels: {labels}\n"

@@ -46,7 +46,7 @@ def get_recent_standups(
 @function_tool
 def save_standup(
     context: StandupContext,
-    summary: Annotated[str | None, "The standup summary to save. If not provided, saves the current standup."] = None,
+    summary: Annotated[str | None, "Summary to save. Defaults to current standup."] = None,
 ) -> str:
     """
     Save the current standup to history.

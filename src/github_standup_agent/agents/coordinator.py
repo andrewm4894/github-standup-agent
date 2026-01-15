@@ -2,12 +2,10 @@
 
 from agents import Agent, ModelSettings
 
-from github_standup_agent.context import StandupContext
-from github_standup_agent.agents.data_gatherer import data_gatherer_agent
 from github_standup_agent.agents.summarizer import summarizer_agent
+from github_standup_agent.context import StandupContext
 from github_standup_agent.tools.clipboard import copy_to_clipboard
 from github_standup_agent.tools.history import get_recent_standups, save_standup
-
 
 COORDINATOR_INSTRUCTIONS = """You are a standup generation coordinator. You help users create
 daily standup summaries from their GitHub activity.
@@ -43,7 +41,6 @@ def create_coordinator_agent(
 ) -> Agent[StandupContext]:
     """Create the coordinator agent with configured sub-agents."""
     from github_standup_agent.agents.data_gatherer import create_data_gatherer_agent
-    from github_standup_agent.agents.summarizer import summarizer_agent
 
     data_gatherer = create_data_gatherer_agent(model=data_gatherer_model)
 

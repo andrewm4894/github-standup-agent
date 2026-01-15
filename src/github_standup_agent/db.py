@@ -4,7 +4,7 @@ import json
 import sqlite3
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from github_standup_agent.config import CONFIG_DIR, DB_FILE
 
@@ -12,7 +12,7 @@ from github_standup_agent.config import CONFIG_DIR, DB_FILE
 class StandupDatabase:
     """SQLite database for persisting standup history."""
 
-    def __init__(self, db_path: Optional[Path] = None):
+    def __init__(self, db_path: Path | None = None):
         self.db_path = db_path or DB_FILE
         self._ensure_db()
 
@@ -36,8 +36,8 @@ class StandupDatabase:
     def save(
         self,
         summary: str,
-        raw_data: Optional[dict[str, Any]] = None,
-        date: Optional[str] = None,
+        raw_data: dict[str, Any] | None = None,
+        date: str | None = None,
     ) -> None:
         """Save a standup to the database."""
         if date is None:
@@ -64,7 +64,7 @@ class StandupDatabase:
         conn.commit()
         conn.close()
 
-    def get_by_date(self, date: str) -> Optional[dict[str, Any]]:
+    def get_by_date(self, date: str) -> dict[str, Any] | None:
         """Get a standup by date."""
         conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row

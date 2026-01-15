@@ -3,7 +3,7 @@
 import time
 from typing import Any
 
-from agents import AgentHooks, RunHooks, RunContextWrapper, Agent, Tool
+from agents import Agent, AgentHooks, RunContextWrapper, RunHooks, Tool
 from rich.console import Console
 
 from github_standup_agent.context import StandupContext
