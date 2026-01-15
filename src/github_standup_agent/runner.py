@@ -1,6 +1,7 @@
 """Runner module for executing the standup agent workflow."""
 
 import os
+from typing import Any
 
 from agents import RunConfig, Runner
 from rich.console import Console
@@ -77,16 +78,17 @@ After generating the summary, save it to history.
     if stream:
         # Streaming mode
         result_text = ""
-        async for event in Runner.run_streamed(
+        stream_result = Runner.run_streamed(
             agent,
             input=prompt,
             context=context,
             run_config=run_config,
-            run_hooks=run_hooks,
-        ):
-            if hasattr(event, "text"):
-                console.print(event.text, end="")
-                result_text += event.text
+            hooks=run_hooks,
+        )
+        async for event in stream_result.stream_events():
+            if hasattr(event, "data") and hasattr(event.data, "delta"):
+                console.print(event.data.delta, end="")
+                result_text += event.data.delta
 
         # Get final output
         return context.current_standup or result_text
@@ -97,7 +99,7 @@ After generating the summary, save it to history.
             input=prompt,
             context=context,
             run_config=run_config,
-            run_hooks=run_hooks,
+            hooks=run_hooks,
         )
 
         # Extract the summary from the result
@@ -105,11 +107,12 @@ After generating the summary, save it to history.
 
         # If structured output, extract the formatted summary
         if hasattr(output, "formatted_summary"):
-            return output.formatted_summary
+            return str(output.formatted_summary)
 
         # Store in context and return
-        context.current_standup = str(output)
-        return str(output)
+        output_str = str(output)
+        context.current_standup = output_str
+        return output_str
 
 
 async def run_interactive_chat(
@@ -154,7 +157,7 @@ async def run_interactive_chat(
     )
 
     # Chat loop
-    conversation_history: list[dict] = []
+    conversation_history: list[dict[str, Any]] = []
 
     while True:
         try:

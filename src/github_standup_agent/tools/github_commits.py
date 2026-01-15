@@ -3,7 +3,7 @@
 import json
 import subprocess
 from datetime import datetime, timedelta
-from typing import Annotated
+from typing import Annotated, Any
 
 from agents import function_tool
 
@@ -59,7 +59,7 @@ def get_my_commits(
         lines = [f"Found {len(commits)} commit(s):\n"]
 
         # Group by repository
-        by_repo: dict[str, list] = {}
+        by_repo: dict[str, list[dict[str, Any]]] = {}
         for commit in commits:
             repo = commit.get("repository", {}).get("nameWithOwner", "unknown")
             if repo not in by_repo:

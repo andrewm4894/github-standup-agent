@@ -1,8 +1,10 @@
 """Output guardrails for validating generated content."""
 
 import re
+from typing import Any
 
 from agents import (
+    Agent,
     GuardrailFunctionOutput,
     OutputGuardrail,
     RunContextWrapper,
@@ -22,7 +24,8 @@ PII_PATTERNS = [
 
 async def check_for_pii(
     ctx: RunContextWrapper[StandupContext],
-    output_text: str,
+    agent: Agent[Any],
+    output: Any,
 ) -> GuardrailFunctionOutput:
     """
     Check the output for potential PII or sensitive information.
@@ -30,6 +33,7 @@ async def check_for_pii(
     This helps prevent accidentally sharing secrets or personal data.
     """
     warnings = []
+    output_text = str(output)
 
     for pattern in PII_PATTERNS:
         matches = re.findall(pattern, output_text, re.IGNORECASE)

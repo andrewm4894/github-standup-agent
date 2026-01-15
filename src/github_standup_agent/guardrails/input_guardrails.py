@@ -1,6 +1,9 @@
 """Input guardrails for validating user input."""
 
+from typing import Any
+
 from agents import (
+    Agent,
     GuardrailFunctionOutput,
     InputGuardrail,
     RunContextWrapper,
@@ -11,7 +14,8 @@ from github_standup_agent.context import StandupContext
 
 async def validate_days_range(
     ctx: RunContextWrapper[StandupContext],
-    input_text: str,
+    agent: Agent[Any],
+    input_data: Any,
 ) -> GuardrailFunctionOutput:
     """
     Validate that the days_back value is within a reasonable range.

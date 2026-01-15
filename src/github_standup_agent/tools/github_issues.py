@@ -3,7 +3,7 @@
 import json
 import subprocess
 from datetime import datetime, timedelta
-from typing import Annotated
+from typing import Annotated, Any
 
 from agents import function_tool
 
@@ -25,7 +25,7 @@ def get_my_issues(
     username = context.github_username or "@me"
     cutoff_date = datetime.now() - timedelta(days=days_back)
 
-    all_issues: list[dict] = []
+    all_issues: list[dict[str, Any]] = []
 
     # Fetch assigned issues
     if include_assigned:

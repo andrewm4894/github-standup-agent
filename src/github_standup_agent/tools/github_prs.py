@@ -3,7 +3,7 @@
 import json
 import subprocess
 from datetime import datetime, timedelta
-from typing import Annotated
+from typing import Annotated, Any
 
 from agents import function_tool
 
@@ -25,7 +25,7 @@ def get_my_prs(
     username = context.github_username or "@me"
     cutoff_date = datetime.now() - timedelta(days=days_back)
 
-    all_prs: list[dict] = []
+    all_prs: list[dict[str, Any]] = []
 
     # Fetch open PRs
     if include_open:
