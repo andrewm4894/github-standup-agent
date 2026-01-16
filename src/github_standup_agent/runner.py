@@ -11,6 +11,7 @@ from github_standup_agent.agents.coordinator import create_coordinator_agent
 from github_standup_agent.config import StandupConfig
 from github_standup_agent.context import StandupContext
 from github_standup_agent.hooks import StandupRunHooks
+from github_standup_agent.instrumentation import setup_posthog
 
 console = Console()
 
@@ -49,6 +50,9 @@ async def run_standup_generation(
         github_username=github_username,
     )
 
+    # Initialize PostHog instrumentation (if configured)
+    setup_posthog(distinct_id=github_username)
+
     # Create the coordinator agent with configured models
     agent = create_coordinator_agent(
         model=config.coordinator_model,
@@ -72,7 +76,7 @@ After generating the summary, save it to history.
     # Run configuration
     run_config = RunConfig(
         workflow_name="standup_generation",
-        trace_include_sensitive_data=False,
+        trace_include_sensitive_data=True,
     )
 
     if stream:
@@ -140,6 +144,9 @@ async def run_interactive_chat(
         github_username=github_username,
     )
 
+    # Initialize PostHog instrumentation (if configured)
+    setup_posthog(distinct_id=github_username)
+
     # Create the coordinator agent
     agent = create_coordinator_agent(
         model=config.coordinator_model,
@@ -149,7 +156,7 @@ async def run_interactive_chat(
 
     run_config = RunConfig(
         workflow_name="standup_chat",
-        trace_include_sensitive_data=False,
+        trace_include_sensitive_data=True,
     )
 
     console.print(
