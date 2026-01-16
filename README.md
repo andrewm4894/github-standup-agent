@@ -7,6 +7,8 @@ AI-powered daily standup summaries from your GitHub activity, built with the [Op
 - **Automatic GitHub Activity Collection**: Pulls your PRs, issues, commits, and code reviews using the `gh` CLI
 - **AI-Powered Summarization**: Creates concise, well-formatted standup summaries
 - **Interactive Chat Mode**: Refine your standup through conversation ("make it shorter", "ignore the docs PR")
+- **Session Persistence**: Resume chat sessions later, use named sessions for recurring standups
+- **Style Customization**: Define your team's standup format with `style.md` and example standups
 - **Historical Context**: References past standups to maintain continuity and avoid repetition
 - **Multiple Output Options**: Print to terminal or copy to clipboard
 - **Fully Local**: Your data never leaves your machine (except for OpenAI API calls)
@@ -133,6 +135,54 @@ standup history --date 2025-01-14
 # Clear history
 standup history --clear
 ```
+
+### Chat Sessions
+
+Chat sessions are automatically saved and can be resumed:
+
+```bash
+# Start a new session (auto-named by date)
+standup chat
+
+# Resume the last session
+standup chat --resume
+
+# Use a named session
+standup chat --session weekly
+
+# List recent sessions
+standup sessions --list
+
+# Clear all sessions
+standup sessions --clear
+```
+
+### Style Customization
+
+Customize how your standups are generated to match your team's format:
+
+```bash
+# Set quick style instructions
+standup config --set-style "Use 'Did:' and 'Will Do:' sections. Be concise."
+
+# Create and edit a detailed style guide
+standup config --init-style
+standup config --edit-style
+```
+
+### Example Standups (Few-Shot Prompting)
+
+Provide real examples of standups you like. The AI uses these to match your preferred tone and format:
+
+```bash
+# Create and edit examples file
+standup config --init-examples
+standup config --edit-examples
+```
+
+See `style.example.md` and `examples.example.md` for templates.
+
+**File locations:** The CLI checks the current directory first, then `~/.config/standup-agent/`. This lets you keep project-specific styles in your repo (gitignored).
 
 ### Configuration
 
