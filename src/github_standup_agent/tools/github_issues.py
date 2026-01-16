@@ -18,81 +18,76 @@ def get_my_issues(
     include_created: Annotated[bool, "Include issues you created"] = True,
 ) -> str:
     """
-    Fetch issues assigned to or created by the current user.
+    Fetch issues assigned to or created by the current user across ALL repositories.
 
-    Returns issues that are open or were recently closed.
+    Returns issues that are open or were recently updated.
+    Searches across all GitHub repositories the user has access to.
     """
-    username = ctx.context.github_username or "@me"
-    cutoff_date = datetime.now() - timedelta(days=days_back)
+    username = ctx.context.github_username
+    if not username:
+        return "GitHub username not available. Cannot search issues."
 
+    cutoff_date = (datetime.now() - timedelta(days=days_back)).strftime("%Y-%m-%d")
     all_issues: list[dict[str, Any]] = []
+    seen_urls: set[str] = set()
 
-    # Fetch assigned issues
+    # Fetch assigned issues across all repos
     if include_assigned:
         try:
             result = subprocess.run(
                 [
                     "gh",
-                    "issue",
-                    "list",
+                    "search",
+                    "issues",
                     "--assignee",
                     username,
-                    "--state",
-                    "all",
+                    f"--updated=>={cutoff_date}",
                     "--json",
-                    "number,title,url,state,createdAt,updatedAt,closedAt,labels",
+                    "number,title,url,state,createdAt,updatedAt,repository,labels",
                     "--limit",
                     "50",
                 ],
                 capture_output=True,
                 text=True,
-                timeout=30,
+                timeout=60,
             )
             if result.returncode == 0 and result.stdout.strip():
                 issues = json.loads(result.stdout)
                 for issue in issues:
-                    # Filter by date
-                    updated_at = issue.get("updatedAt")
-                    if updated_at:
-                        updated_date = datetime.fromisoformat(updated_at.replace("Z", "+00:00"))
-                        if updated_date.replace(tzinfo=None) >= cutoff_date:
-                            issue["source"] = "assigned"
-                            all_issues.append(issue)
+                    if issue["url"] not in seen_urls:
+                        issue["source"] = "assigned"
+                        all_issues.append(issue)
+                        seen_urls.add(issue["url"])
         except (subprocess.TimeoutExpired, json.JSONDecodeError, FileNotFoundError):
             pass
 
-    # Fetch created issues (if different from assigned)
+    # Fetch created issues across all repos
     if include_created:
         try:
             result = subprocess.run(
                 [
                     "gh",
-                    "issue",
-                    "list",
+                    "search",
+                    "issues",
                     "--author",
                     username,
-                    "--state",
-                    "all",
+                    f"--updated=>={cutoff_date}",
                     "--json",
-                    "number,title,url,state,createdAt,updatedAt,closedAt,labels",
+                    "number,title,url,state,createdAt,updatedAt,repository,labels",
                     "--limit",
                     "50",
                 ],
                 capture_output=True,
                 text=True,
-                timeout=30,
+                timeout=60,
             )
             if result.returncode == 0 and result.stdout.strip():
                 issues = json.loads(result.stdout)
-                existing_numbers = {i["number"] for i in all_issues}
                 for issue in issues:
-                    if issue["number"] not in existing_numbers:
-                        updated_at = issue.get("updatedAt")
-                        if updated_at:
-                            updated_date = datetime.fromisoformat(updated_at.replace("Z", "+00:00"))
-                            if updated_date.replace(tzinfo=None) >= cutoff_date:
-                                issue["source"] = "created"
-                                all_issues.append(issue)
+                    if issue["url"] not in seen_urls:
+                        issue["source"] = "created"
+                        all_issues.append(issue)
+                        seen_urls.add(issue["url"])
         except (subprocess.TimeoutExpired, json.JSONDecodeError, FileNotFoundError):
             pass
 
@@ -102,15 +97,27 @@ def get_my_issues(
     if not all_issues:
         return "No issues found in the specified time range."
 
-    # Format output
-    lines = [f"Found {len(all_issues)} issue(s):\n"]
+    # Group by repository
+    by_repo: dict[str, list[dict[str, Any]]] = {}
     for issue in all_issues:
-        status_emoji = "🔵" if issue["state"] == "OPEN" else "⚫"
-        labels = ", ".join(lbl["name"] for lbl in issue.get("labels", [])) or "no labels"
-        lines.append(
-            f"{status_emoji} #{issue['number']}: {issue['title']}\n"
-            f"   State: {issue['state']} | Labels: {labels}\n"
-            f"   URL: {issue['url']}\n"
-        )
+        repo = issue.get("repository", {}).get("nameWithOwner", "unknown")
+        if repo not in by_repo:
+            by_repo[repo] = []
+        by_repo[repo].append(issue)
+
+    # Format output
+    lines = [f"Found {len(all_issues)} issue(s) across {len(by_repo)} repo(s):\n"]
+
+    for repo, repo_issues in by_repo.items():
+        lines.append(f"\n📁 {repo}:")
+        for issue in repo_issues:
+            status_emoji = "🔵" if issue["state"] == "open" else "⚫"
+            labels = ", ".join(lbl["name"] for lbl in issue.get("labels", [])) or "no labels"
+            source = f"({issue['source']})" if issue.get("source") else ""
+            lines.append(
+                f"   {status_emoji} #{issue['number']}: {issue['title']} {source}\n"
+                f"      State: {issue['state']} | Labels: {labels}\n"
+                f"      URL: {issue['url']}"
+            )
 
     return "\n".join(lines)
