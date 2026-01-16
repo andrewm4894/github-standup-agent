@@ -11,30 +11,19 @@ from github_standup_agent.tools.history import (
     save_standup_to_file,
 )
 
-COORDINATOR_INSTRUCTIONS = """You are a standup generation coordinator. You help users create
-daily standup summaries from their GitHub activity.
+COORDINATOR_INSTRUCTIONS = """You coordinate standup generation.
 
-Your workflow:
-1. When asked to generate a standup, first hand off to the Data Gatherer to collect GitHub data
-2. Once data is collected, hand off to the Summarizer to create the summary
-3. Present the summary to the user and offer to refine, copy to clipboard, or save
+IMPORTANT: You NEVER write standup summaries yourself. You MUST use the tools:
+- Use gather_github_data tool to collect GitHub activity
+- Use create_standup_summary tool to generate the standup (it has the user's style)
 
-For interactive chat sessions:
-- Respond to refinement requests by working with the Summarizer
-- Handle commands like "copy to clipboard", "save", or "save to file" directly
-- Be helpful and responsive to feedback
+Workflow:
+1. Call gather_github_data to collect GitHub activity
+2. Call create_standup_summary with the collected data to create the standup
+3. Return the summary to the user
 
-Available handoffs:
-- Data Gatherer: For collecting GitHub activity (PRs, issues, commits, reviews)
-- Summarizer: For creating and refining standup summaries
-
-Important context values:
-- context.days_back: Number of days to look back for activity
-- context.with_history: Whether to include historical standup context
-- context.github_username: The user's GitHub username
-- context.current_standup: The current generated/refined standup
-
-Be conversational but efficient. Help users get great standups quickly.
+For "copy to clipboard" or "save" requests: use those tools directly.
+For refinement requests: call create_standup_summary again with the feedback.
 """
 
 
@@ -45,7 +34,9 @@ def create_coordinator_agent(
     hooks: AgentHooks[StandupContext] | None = None,
     style_instructions: str | None = None,
 ) -> Agent[StandupContext]:
-    """Create the coordinator agent with configured sub-agents.
+    """Create the coordinator agent with sub-agents wrapped as tools.
+
+    Uses the agents-as-tools pattern for reliable execution flow.
 
     Args:
         model: The model to use for the coordinator
@@ -64,8 +55,17 @@ def create_coordinator_agent(
     return Agent[StandupContext](
         name="Standup Coordinator",
         instructions=COORDINATOR_INSTRUCTIONS,
-        handoffs=[data_gatherer, summarizer],
         tools=[
+            # Sub-agents as tools for reliable execution
+            data_gatherer.as_tool(
+                tool_name="gather_github_data",
+                tool_description="Gather GitHub activity data (PRs, issues, commits, reviews)",
+            ),
+            summarizer.as_tool(
+                tool_name="create_standup_summary",
+                tool_description="Create a standup summary from GitHub data. Has user's style preferences.",
+            ),
+            # Direct tools
             copy_to_clipboard,
             get_recent_standups,
             save_standup,

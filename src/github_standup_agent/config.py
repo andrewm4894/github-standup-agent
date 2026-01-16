@@ -36,9 +36,9 @@ class StandupConfig(BaseSettings):
     # Agent settings
     default_days_back: int = 1
     default_output: str = "stdout"  # stdout, clipboard
-    coordinator_model: str = "gpt-4o"
-    data_gatherer_model: str = "gpt-4o-mini"
-    summarizer_model: str = "gpt-4o"
+    coordinator_model: str = "gpt-5.2"
+    data_gatherer_model: str = "gpt-5.2"
+    summarizer_model: str = "gpt-5.2"
     temperature: float = 0.7
 
     # Repos to include/exclude (empty = all)

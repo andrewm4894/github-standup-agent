@@ -173,13 +173,9 @@ async def run_standup_generation(
     )
 
     # Build the prompt
-    prompt = f"""Generate a standup summary for the last {days_back} day(s).
+    prompt = f"""Generate a standup for the last {days_back} day(s).
 
-First, gather all my GitHub activity data, then create a concise standup summary.
-
-{"Check my recent standups to maintain continuity." if with_history else ""}
-
-After generating the summary, save it to history.
+{"Include context from recent standups." if with_history else ""}
 """
 
     # Create hooks
@@ -225,13 +221,7 @@ After generating the summary, save it to history.
             )
 
             # Extract the summary from the result
-            output = result.final_output
-
-            # If structured output, extract the formatted summary
-            if hasattr(output, "formatted_summary"):
-                final_standup = str(output.formatted_summary)
-            else:
-                final_standup = str(output)
+            final_standup = str(result.final_output)
 
             # Store in context
             context.current_standup = final_standup
@@ -377,9 +367,8 @@ User request: {user_input}
 
                 output = str(result.final_output)
 
-                # Update context with current standup if it looks like one
-                if "Yesterday" in output or "Today" in output or "worked on" in output.lower():
-                    context.current_standup = output
+                # Always update context - let the agent decide what's a standup
+                context.current_standup = output
 
                 # Display the response
                 console.print(f"[bold green]Assistant[/bold green]: {output}\n")
