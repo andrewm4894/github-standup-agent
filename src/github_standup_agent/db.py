@@ -47,19 +47,22 @@ class StandupDatabase:
         cursor = conn.cursor()
 
         # Upsert - update if exists, insert if not
-        cursor.execute("""
+        cursor.execute(
+            """
             INSERT INTO standups (date, summary, raw_data, created_at)
             VALUES (?, ?, ?, ?)
             ON CONFLICT(date) DO UPDATE SET
                 summary = excluded.summary,
                 raw_data = excluded.raw_data,
                 created_at = excluded.created_at
-        """, (
-            date,
-            summary,
-            json.dumps(raw_data) if raw_data else None,
-            datetime.now().isoformat(),
-        ))
+        """,
+            (
+                date,
+                summary,
+                json.dumps(raw_data) if raw_data else None,
+                datetime.now().isoformat(),
+            ),
+        )
 
         conn.commit()
         conn.close()
@@ -70,10 +73,7 @@ class StandupDatabase:
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
 
-        cursor.execute(
-            "SELECT * FROM standups WHERE date = ?",
-            (date,)
-        )
+        cursor.execute("SELECT * FROM standups WHERE date = ?", (date,))
         row = cursor.fetchone()
         conn.close()
 
@@ -93,10 +93,7 @@ class StandupDatabase:
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
 
-        cursor.execute(
-            "SELECT * FROM standups ORDER BY date DESC LIMIT ?",
-            (limit,)
-        )
+        cursor.execute("SELECT * FROM standups ORDER BY date DESC LIMIT ?", (limit,))
         rows = cursor.fetchall()
         conn.close()
 

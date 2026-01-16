@@ -35,3 +35,6 @@ class StandupContext:
 
     # GitHub username (auto-detected or from config)
     github_username: str | None = None
+
+    # Custom style instructions (loaded from config and/or style.md file)
+    style_instructions: str | None = None

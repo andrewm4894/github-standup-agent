@@ -39,12 +39,23 @@ def create_coordinator_agent(
     data_gatherer_model: str = "gpt-4o-mini",
     summarizer_model: str = "gpt-4o",
     hooks: AgentHooks[StandupContext] | None = None,
+    style_instructions: str | None = None,
 ) -> Agent[StandupContext]:
-    """Create the coordinator agent with configured sub-agents."""
+    """Create the coordinator agent with configured sub-agents.
+
+    Args:
+        model: The model to use for the coordinator
+        data_gatherer_model: The model to use for the data gatherer
+        summarizer_model: The model to use for the summarizer
+        hooks: Optional agent hooks for logging/observability
+        style_instructions: Optional custom style instructions for the summarizer
+    """
     from github_standup_agent.agents.data_gatherer import create_data_gatherer_agent
 
     data_gatherer = create_data_gatherer_agent(model=data_gatherer_model, hooks=hooks)
-    summarizer = create_summarizer_agent(model=summarizer_model, hooks=hooks)
+    summarizer = create_summarizer_agent(
+        model=summarizer_model, hooks=hooks, style_instructions=style_instructions
+    )
 
     return Agent[StandupContext](
         name="Standup Coordinator",

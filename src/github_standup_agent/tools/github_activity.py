@@ -50,9 +50,13 @@ def get_activity_summary(
     try:
         result = subprocess.run(
             [
-                "gh", "api", "graphql",
-                "-f", f"query={ACTIVITY_QUERY}",
-                "-F", f"username={username}",
+                "gh",
+                "api",
+                "graphql",
+                "-f",
+                f"query={ACTIVITY_QUERY}",
+                "-F",
+                f"username={username}",
             ],
             capture_output=True,
             text=True,

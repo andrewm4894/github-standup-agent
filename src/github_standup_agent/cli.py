@@ -1,6 +1,7 @@
 """CLI interface for GitHub Standup Agent."""
 
 import asyncio
+import os
 from typing import Annotated
 
 import typer
@@ -12,7 +13,13 @@ from rich.panel import Panel
 load_dotenv()
 
 from github_standup_agent import __version__
-from github_standup_agent.config import StandupConfig, get_github_username
+from github_standup_agent.config import (
+    STYLE_FILE,
+    StandupConfig,
+    create_default_style_file,
+    get_github_username,
+    load_style_from_file,
+)
 
 app = typer.Typer(
     name="standup",
@@ -67,7 +74,9 @@ def generate(
     ] = False,
     verbose: Annotated[
         bool,
-        typer.Option("--verbose/--quiet", "-V/-q", help="Show agent activity (tool calls, handoffs)."),
+        typer.Option(
+            "--verbose/--quiet", "-V/-q", help="Show agent activity (tool calls, handoffs)."
+        ),
     ] = True,
 ) -> None:
     """Generate a standup summary from your GitHub activity."""
@@ -122,8 +131,18 @@ def chat(
     ] = 1,
     verbose: Annotated[
         bool,
-        typer.Option("--verbose/--quiet", "-V/-q", help="Show agent activity (tool calls, handoffs)."),
+        typer.Option(
+            "--verbose/--quiet", "-V/-q", help="Show agent activity (tool calls, handoffs)."
+        ),
     ] = True,
+    resume: Annotated[
+        bool,
+        typer.Option("--resume", "-r", help="Resume the last chat session."),
+    ] = False,
+    session: Annotated[
+        str | None,
+        typer.Option("--session", "-s", help="Use a named session for persistence."),
+    ] = None,
 ) -> None:
     """Start an interactive chat session to refine your standup."""
     from github_standup_agent.runner import run_interactive_chat
@@ -146,7 +165,8 @@ def chat(
             '  • "make it shorter" - Refine the summary\n'
             '  • "ignore the docs PR" - Exclude specific items\n'
             '  • "copy to clipboard" - Copy final version\n'
-            '  • "exit" or "quit" - End session',
+            '  • "exit" or "quit" - End session\n\n'
+            "[dim]Session is automatically saved for later resumption.[/dim]",
             title="Welcome",
             border_style="blue",
         )
@@ -159,10 +179,56 @@ def chat(
                 days_back=days,
                 github_username=github_user,
                 verbose=verbose,
+                session_name=session,
+                resume=resume,
             )
         )
     except KeyboardInterrupt:
         console.print("\n[dim]Goodbye![/dim]")
+
+
+@app.command()
+def sessions(
+    list_all: Annotated[
+        bool,
+        typer.Option("--list", "-l", help="List recent chat sessions."),
+    ] = False,
+    clear: Annotated[
+        bool,
+        typer.Option("--clear", help="Clear all chat sessions."),
+    ] = False,
+) -> None:
+    """Manage chat sessions."""
+    from github_standup_agent.config import SESSIONS_DB_FILE
+    from github_standup_agent.runner import list_sessions
+
+    if clear:
+        if SESSIONS_DB_FILE.exists():
+            if typer.confirm("Are you sure you want to clear all chat sessions?"):
+                SESSIONS_DB_FILE.unlink()
+                console.print("[green]All chat sessions cleared.[/green]")
+        else:
+            console.print("[dim]No sessions to clear.[/dim]")
+        return
+
+    # Default to listing sessions
+    if list_all or not clear:
+        session_list = list_sessions(limit=10)
+        if not session_list:
+            console.print("[dim]No chat sessions yet.[/dim]")
+            console.print("[dim]Start one with: standup chat[/dim]")
+            return
+
+        console.print("[bold]Recent Chat Sessions:[/bold]\n")
+        for s in session_list:
+            session_id = s["session_id"]
+            updated = s["updated_at"]
+            # Remove the 'chat_' prefix for display
+            display_name = session_id[5:] if session_id.startswith("chat_") else session_id
+            console.print(f"  [cyan]{display_name}[/cyan]  [dim](updated: {updated})[/dim]")
+
+        console.print("\n[dim]Resume with: standup chat --resume[/dim]")
+        console.print("[dim]Or use a named session: standup chat --session <name>[/dim]")
 
 
 @app.command()
@@ -183,12 +249,25 @@ def config(
         str | None,
         typer.Option("--set-model", help="Set the summarizer model."),
     ] = None,
+    set_style: Annotated[
+        str | None,
+        typer.Option(
+            "--set-style", help="Set quick style instructions (use style.md for detailed)."
+        ),
+    ] = None,
+    init_style: Annotated[
+        bool,
+        typer.Option("--init-style", help="Create a style.md template file to customize."),
+    ] = False,
+    edit_style: Annotated[
+        bool,
+        typer.Option("--edit-style", help="Open style.md in your default editor."),
+    ] = False,
 ) -> None:
     """Manage standup-agent configuration."""
     cfg = StandupConfig.load()
 
     if set_openai_key:
-
         # For security, we only set this in environment, not in file
         console.print(
             "[yellow]For security, API keys should be set via environment variable.[/yellow]\n"
@@ -208,20 +287,80 @@ def config(
         console.print(f"[green]Summarizer model set to: {set_model}[/green]")
         return
 
-    if show or not any([set_openai_key, set_github_user, set_model]):
+    if set_style:
+        cfg.style_instructions = set_style
+        cfg.save()
+        console.print("[green]Style instructions set.[/green]")
+        console.print("[dim]For detailed customization, use --init-style to create style.md[/dim]")
+        return
+
+    if init_style:
+        if STYLE_FILE.exists():
+            if not typer.confirm(f"Style file already exists at {STYLE_FILE}. Overwrite?"):
+                console.print("[yellow]Cancelled.[/yellow]")
+                return
+        style_path = create_default_style_file()
+        console.print(f"[green]Created style template at:[/green] {style_path}")
+        console.print("[dim]Edit this file to customize your standup format.[/dim]")
+        return
+
+    if edit_style:
+        import shutil
+        import subprocess
+
+        if not STYLE_FILE.exists():
+            create_default_style_file()
+            console.print(f"[dim]Created new style.md at {STYLE_FILE}[/dim]")
+
+        # Try to open in editor
+        editor = os.environ.get("EDITOR", "")
+        if not editor:
+            # Try common editors
+            for ed in ["code", "vim", "nano", "vi"]:
+                if shutil.which(ed):
+                    editor = ed
+                    break
+
+        if editor:
+            subprocess.run([editor, str(STYLE_FILE)])
+        else:
+            console.print(f"[yellow]Could not find editor. Edit manually:[/yellow] {STYLE_FILE}")
+        return
+
+    if show or not any(
+        [set_openai_key, set_github_user, set_model, set_style, init_style, edit_style]
+    ):
         detected_user = get_github_username()
         api_key_status = "Set" if cfg.openai_api_key else "Not set (check env)"
-        console.print(Panel(
-            f"[bold]GitHub Username:[/bold] {cfg.github_username or detected_user or 'Not set'}\n"
-            f"[bold]OpenAI API Key:[/bold] {api_key_status}\n"
-            f"[bold]Default Days:[/bold] {cfg.default_days_back}\n"
-            f"[bold]Coordinator Model:[/bold] {cfg.coordinator_model}\n"
-            f"[bold]Data Gatherer Model:[/bold] {cfg.data_gatherer_model}\n"
-            f"[bold]Summarizer Model:[/bold] {cfg.summarizer_model}\n"
-            f"[bold]Temperature:[/bold] {cfg.temperature}",
-            title="Configuration",
-            border_style="cyan",
-        ))
+
+        # Style status
+        file_style = load_style_from_file()
+        if file_style:
+            style_status = f"[green]Loaded from {STYLE_FILE}[/green]"
+        elif cfg.style_instructions:
+            style_status = (
+                f"[green]Config: {cfg.style_instructions[:50]}...[/green]"
+                if len(cfg.style_instructions or "") > 50
+                else f"[green]Config: {cfg.style_instructions}[/green]"
+            )
+        else:
+            style_status = "[dim]Default (use --init-style to customize)[/dim]"
+
+        username = cfg.github_username or detected_user or "Not set"
+        console.print(
+            Panel(
+                f"[bold]GitHub Username:[/bold] {username}\n"
+                f"[bold]OpenAI API Key:[/bold] {api_key_status}\n"
+                f"[bold]Default Days:[/bold] {cfg.default_days_back}\n"
+                f"[bold]Coordinator Model:[/bold] {cfg.coordinator_model}\n"
+                f"[bold]Data Gatherer Model:[/bold] {cfg.data_gatherer_model}\n"
+                f"[bold]Summarizer Model:[/bold] {cfg.summarizer_model}\n"
+                f"[bold]Temperature:[/bold] {cfg.temperature}\n"
+                f"[bold]Style:[/bold] {style_status}",
+                title="Configuration",
+                border_style="cyan",
+            )
+        )
 
 
 @app.command()

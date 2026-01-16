@@ -30,11 +30,17 @@ def get_my_commits(
     try:
         result = subprocess.run(
             [
-                "gh", "search", "commits",
-                "--author", username,
-                "--author-date", f">={cutoff_date}",
-                "--json", "sha,commit,repository,url",
-                "--limit", "50",
+                "gh",
+                "search",
+                "commits",
+                "--author",
+                username,
+                "--author-date",
+                f">={cutoff_date}",
+                "--json",
+                "sha,commit,repository,url",
+                "--limit",
+                "50",
             ],
             capture_output=True,
             text=True,

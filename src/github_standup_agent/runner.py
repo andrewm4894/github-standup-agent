@@ -1,19 +1,101 @@
 """Runner module for executing the standup agent workflow."""
 
 import os
-from typing import Any
+import sqlite3
+from datetime import date
 
-from agents import RunConfig, Runner
+from agents import RunConfig, Runner, SQLiteSession
 from rich.console import Console
 from rich.prompt import Prompt
 
 from github_standup_agent.agents.coordinator import create_coordinator_agent
-from github_standup_agent.config import StandupConfig
+from github_standup_agent.config import (
+    CONFIG_DIR,
+    SESSIONS_DB_FILE,
+    StandupConfig,
+    get_combined_style_instructions,
+)
 from github_standup_agent.context import StandupContext
 from github_standup_agent.hooks import StandupAgentHooks, StandupRunHooks
 from github_standup_agent.instrumentation import capture_event, setup_posthog, shutdown_posthog
 
 console = Console()
+
+
+def _ensure_sessions_db() -> None:
+    """Ensure the sessions database directory exists."""
+    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def get_session_id(name: str | None = None, github_username: str | None = None) -> str:
+    """Generate a session ID.
+
+    Args:
+        name: Optional custom session name
+        github_username: GitHub username for default session naming
+
+    Returns:
+        A session ID string
+    """
+    if name:
+        return f"chat_{name}"
+    # Default: use date-based session ID
+    return f"chat_{github_username or 'user'}_{date.today().isoformat()}"
+
+
+def get_last_session_id() -> str | None:
+    """Get the most recently used session ID.
+
+    Returns:
+        The last session ID or None if no sessions exist
+    """
+    if not SESSIONS_DB_FILE.exists():
+        return None
+
+    try:
+        conn = sqlite3.connect(str(SESSIONS_DB_FILE))
+        cursor = conn.execute(
+            """
+            SELECT session_id FROM agent_sessions
+            ORDER BY updated_at DESC
+            LIMIT 1
+            """
+        )
+        result = cursor.fetchone()
+        conn.close()
+        return result[0] if result else None
+    except sqlite3.Error:
+        return None
+
+
+def list_sessions(limit: int = 10) -> list[dict[str, str]]:
+    """List recent chat sessions.
+
+    Args:
+        limit: Maximum number of sessions to return
+
+    Returns:
+        List of session info dicts with 'session_id', 'created_at', 'updated_at'
+    """
+    if not SESSIONS_DB_FILE.exists():
+        return []
+
+    try:
+        conn = sqlite3.connect(str(SESSIONS_DB_FILE))
+        cursor = conn.execute(
+            """
+            SELECT session_id, created_at, updated_at
+            FROM agent_sessions
+            ORDER BY updated_at DESC
+            LIMIT ?
+            """,
+            (limit,),
+        )
+        results = cursor.fetchall()
+        conn.close()
+        return [{"session_id": r[0], "created_at": r[1], "updated_at": r[2]} for r in results]
+    except sqlite3.Error:
+        return []
 
 
 def _emit_standup_event(standup: str, context: StandupContext) -> None:
@@ -63,12 +145,16 @@ async def run_standup_generation(
     api_key = config.get_api_key()
     os.environ["OPENAI_API_KEY"] = api_key
 
+    # Load custom style instructions
+    style_instructions = get_combined_style_instructions(config)
+
     # Create context
     context = StandupContext(
         config=config,
         days_back=days_back,
         with_history=with_history,
         github_username=github_username,
+        style_instructions=style_instructions,
     )
 
     # Initialize PostHog instrumentation (if configured)
@@ -77,12 +163,13 @@ async def run_standup_generation(
     # Create agent hooks for verbose mode
     agent_hooks = StandupAgentHooks(verbose=verbose) if verbose else None
 
-    # Create the coordinator agent with configured models
+    # Create the coordinator agent with configured models and style
     agent = create_coordinator_agent(
         model=config.coordinator_model,
         data_gatherer_model=config.data_gatherer_model,
         summarizer_model=config.summarizer_model,
         hooks=agent_hooks,
+        style_instructions=style_instructions,
     )
 
     # Build the prompt
@@ -163,6 +250,8 @@ async def run_interactive_chat(
     days_back: int = 1,
     github_username: str | None = None,
     verbose: bool = False,
+    session_name: str | None = None,
+    resume: bool = False,
 ) -> None:
     """
     Run an interactive chat session for refining standups.
@@ -172,10 +261,15 @@ async def run_interactive_chat(
         days_back: Number of days to look back for activity
         github_username: GitHub username
         verbose: Whether to show verbose output (agent activity, tool calls)
+        session_name: Optional custom session name for persistence
+        resume: If True, resume the last session instead of starting new
     """
     # Set up OpenAI API key
     api_key = config.get_api_key()
     os.environ["OPENAI_API_KEY"] = api_key
+
+    # Load custom style instructions
+    style_instructions = get_combined_style_instructions(config)
 
     # Create context
     context = StandupContext(
@@ -183,6 +277,7 @@ async def run_interactive_chat(
         days_back=days_back,
         with_history=True,  # Always use history in chat mode
         github_username=github_username,
+        style_instructions=style_instructions,
     )
 
     # Initialize PostHog instrumentation (if configured)
@@ -191,12 +286,13 @@ async def run_interactive_chat(
     # Create agent hooks for verbose mode
     agent_hooks = StandupAgentHooks(verbose=verbose) if verbose else None
 
-    # Create the coordinator agent
+    # Create the coordinator agent with style
     agent = create_coordinator_agent(
         model=config.coordinator_model,
         data_gatherer_model=config.data_gatherer_model,
         summarizer_model=config.summarizer_model,
         hooks=agent_hooks,
+        style_instructions=style_instructions,
     )
 
     # Create run hooks for verbose mode
@@ -207,12 +303,36 @@ async def run_interactive_chat(
         trace_include_sensitive_data=True,
     )
 
+    # Set up session for conversation persistence
+    _ensure_sessions_db()
+
+    if resume:
+        # Try to resume the last session
+        session_id = get_last_session_id()
+        if session_id:
+            console.print(f"[dim]Resuming session: {session_id}[/dim]")
+        else:
+            console.print("[yellow]No previous session found, starting new session.[/yellow]")
+            session_id = get_session_id(session_name, github_username)
+    else:
+        session_id = get_session_id(session_name, github_username)
+
+    session = SQLiteSession(session_id=session_id, db_path=str(SESSIONS_DB_FILE))
+
+    # Check if resuming an existing session with history
+    existing_items = await session.get_items()
+    is_new_session = len(existing_items) == 0
+
     console.print(
-        f"\n[dim]GitHub user: {github_username} | Looking back: {days_back} day(s)[/dim]\n"
+        f"\n[dim]GitHub user: {github_username} | Looking back: {days_back} day(s) | "
+        f"Session: {session_id}[/dim]\n"
     )
 
-    # Chat loop
-    conversation_history: list[dict[str, Any]] = []
+    if not is_new_session:
+        console.print(f"[dim]Resumed session with {len(existing_items)} previous messages.[/dim]\n")
+
+    # Track if this is the first message in this run (for context injection)
+    first_message_in_run = is_new_session
 
     try:
         while True:
@@ -226,14 +346,11 @@ async def run_interactive_chat(
 
             # Check for exit commands
             if user_input.lower() in ("exit", "quit", "bye", "q"):
-                console.print("[dim]Goodbye! Your standup was saved.[/dim]")
+                console.print(f"[dim]Goodbye! Session saved as '{session_id}'.[/dim]")
                 break
 
-            # Add user message to history
-            conversation_history.append({"role": "user", "content": user_input})
-
-            # Build context-aware prompt
-            if not conversation_history[:-1]:
+            # Build context-aware prompt for first message
+            if first_message_in_run:
                 # First message - include setup context
                 prompt = f"""The user wants to generate a standup. Context:
 - GitHub username: {github_username}
@@ -242,11 +359,12 @@ async def run_interactive_chat(
 
 User request: {user_input}
 """
+                first_message_in_run = False
             else:
                 prompt = user_input
 
             try:
-                # Run the agent
+                # Run the agent with session for automatic history management
                 console.print()
                 result = await Runner.run(
                     agent,
@@ -254,6 +372,7 @@ User request: {user_input}
                     context=context,
                     run_config=run_config,
                     hooks=run_hooks,
+                    session=session,
                 )
 
                 output = str(result.final_output)
@@ -265,12 +384,11 @@ User request: {user_input}
                 # Display the response
                 console.print(f"[bold green]Assistant[/bold green]: {output}\n")
 
-                # Add to history
-                conversation_history.append({"role": "assistant", "content": output})
-
             except Exception as e:
                 console.print(f"[red]Error: {e}[/red]\n")
                 continue
     finally:
+        # Clean up session connection
+        session.close()
         # Ensure PostHog events are flushed
         shutdown_posthog()

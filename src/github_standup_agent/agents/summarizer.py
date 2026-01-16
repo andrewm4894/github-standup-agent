@@ -52,15 +52,40 @@ Always store the generated summary in context.current_standup for later use.
 """
 
 
+def _build_instructions(custom_style: str | None = None) -> str:
+    """Build the full instructions with optional custom style."""
+    if not custom_style:
+        return SUMMARIZER_INSTRUCTIONS
+
+    return f"""{SUMMARIZER_INSTRUCTIONS}
+
+---
+## User's Custom Style Preferences
+
+The user has specified the following style preferences. Follow these when generating summaries:
+
+{custom_style}
+"""
+
+
 def create_summarizer_agent(
     model: str = "gpt-4o",
     hooks: AgentHooks[StandupContext] | None = None,
+    style_instructions: str | None = None,
 ) -> Agent[StandupContext]:
-    """Create the summarizer agent."""
+    """Create the summarizer agent.
+
+    Args:
+        model: The model to use for the summarizer
+        hooks: Optional agent hooks for logging/observability
+        style_instructions: Optional custom style instructions from user config/file
+    """
+    instructions = _build_instructions(style_instructions)
+
     return Agent[StandupContext](
         name="Summarizer",
         handoff_description="Creates formatted standup summaries from GitHub data",
-        instructions=SUMMARIZER_INSTRUCTIONS,
+        instructions=instructions,
         tools=[
             get_recent_standups,
             save_standup,

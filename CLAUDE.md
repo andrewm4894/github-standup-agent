@@ -66,9 +66,10 @@ def get_my_prs(
 
 Entry point is `standup` (defined in `cli.py` using Typer):
 - `standup generate [--days N] [--output clipboard] [--with-history] [--verbose/--quiet]`
-- `standup chat [--days N] [--verbose/--quiet]` - interactive refinement session
+- `standup chat [--days N] [--verbose/--quiet] [--resume] [--session NAME]` - interactive refinement session
+- `standup sessions [--list] [--clear]` - manage chat sessions
 - `standup history [--list] [--date YYYY-MM-DD] [--clear]`
-- `standup config [--show] [--set-github-user X] [--set-model X]`
+- `standup config [--show] [--set-github-user X] [--set-model X] [--set-style X] [--init-style] [--edit-style]`
 
 Verbose mode (on by default) shows agent activity: tool calls, handoffs, timing. Use `--quiet` to disable.
 
@@ -80,6 +81,81 @@ Environment variables:
 - `STANDUP_COORDINATOR_MODEL`, `STANDUP_DATA_GATHERER_MODEL`, `STANDUP_SUMMARIZER_MODEL`
 
 Config file: `~/.config/standup-agent/config.json`
+
+## Style Customization
+
+Customize how standup summaries are generated with your own style preferences.
+
+### Quick Style (via config)
+
+Set a brief style instruction:
+```bash
+standup config --set-style "Be very concise. Use bullet points only. Skip blockers unless critical."
+```
+
+### Detailed Style (via style.md file)
+
+For more detailed customization, create and edit a style file:
+```bash
+standup config --init-style    # Creates ~/.config/standup-agent/style.md
+standup config --edit-style    # Opens the file in your editor
+```
+
+Example `style.md` content:
+```markdown
+# My Standup Style
+
+- Keep summaries very concise (3-5 bullet points max)
+- Use emoji for status: completed, in progress, blocked
+- Group items by project/repo instead of activity type
+- Skip the blockers section unless there's something critical
+- Focus on outcomes and impact, not just what was done
+- Use past tense for completed work, present for ongoing
+```
+
+**Priority order**: style.md file + config style_instructions are combined (file first, then config).
+
+### CLI Commands
+
+- `standup config --show` - Shows current style configuration
+- `standup config --set-style "..."` - Set quick style instructions
+- `standup config --init-style` - Create style.md template
+- `standup config --edit-style` - Open style.md in editor
+
+## Chat Sessions
+
+Chat mode uses the OpenAI Agents SDK's `SQLiteSession` for automatic conversation persistence. Sessions are stored at `~/.config/standup-agent/chat_sessions.db`.
+
+### Basic Usage
+
+```bash
+standup chat                    # Start new session (auto-named by date)
+standup chat --resume           # Resume the last session
+standup chat --session weekly   # Use a named session
+```
+
+### Session Features
+
+- **Automatic persistence**: Conversation history is saved automatically
+- **Resume later**: Continue refining a standup from where you left off
+- **Named sessions**: Create reusable sessions for recurring standups (e.g., `--session weekly`)
+- **Context maintained**: The agent remembers previous messages in the session
+
+### Managing Sessions
+
+```bash
+standup sessions --list    # List recent sessions
+standup sessions --clear   # Delete all sessions
+```
+
+### How It Works
+
+Sessions use the SDK's memory feature to automatically:
+1. Load previous conversation history when resuming
+2. Save new messages after each turn
+3. Provide full context to the agent for better responses
+
+Session IDs follow the pattern `chat_{name}` or `chat_{username}_{date}` for auto-generated sessions.
 
 ## PostHog Instrumentation (optional)
 

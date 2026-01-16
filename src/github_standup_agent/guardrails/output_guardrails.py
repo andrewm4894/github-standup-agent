@@ -14,10 +14,10 @@ from github_standup_agent.context import StandupContext
 
 # Patterns that might indicate sensitive information
 PII_PATTERNS = [
-    r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b',  # Email
-    r'\b\d{3}[-.]?\d{3}[-.]?\d{4}\b',  # Phone number
-    r'\b(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{36,}\b',  # GitHub tokens
-    r'\bsk-[A-Za-z0-9]{32,}\b',  # OpenAI API keys
+    r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b",  # Email
+    r"\b\d{3}[-.]?\d{3}[-.]?\d{4}\b",  # Phone number
+    r"\b(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{36,}\b",  # GitHub tokens
+    r"\bsk-[A-Za-z0-9]{32,}\b",  # OpenAI API keys
     r'\b(?:api[_-]?key|secret|password|token)\s*[=:]\s*["\']?[A-Za-z0-9]{16,}["\']?\b',
 ]
 
