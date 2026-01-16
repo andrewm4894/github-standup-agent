@@ -1,11 +1,13 @@
 """Tools for managing standup history."""
 
+from datetime import date
 from typing import Annotated
 
 from agents import RunContextWrapper, function_tool
 
 from github_standup_agent.context import StandupContext
 from github_standup_agent.db import StandupDatabase
+from github_standup_agent.instrumentation import capture_event
 
 
 @function_tool
@@ -69,5 +71,21 @@ def save_standup(
     }
 
     db.save(summary=content, raw_data=raw_data)
+
+    # Emit PostHog event for cloud tracking
+    capture_event(
+        event_name="standup_saved",
+        properties={
+            "summary": content,
+            "github_username": ctx.context.github_username,
+            "days_back": ctx.context.days_back,
+            "date": date.today().isoformat(),
+            "summary_length": len(content),
+            "has_prs": bool(ctx.context.collected_prs),
+            "has_issues": bool(ctx.context.collected_issues),
+            "has_commits": bool(ctx.context.collected_commits),
+            "has_reviews": bool(ctx.context.collected_reviews),
+        },
+    )
 
     return "✅ Standup saved to history."

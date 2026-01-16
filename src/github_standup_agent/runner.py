@@ -10,10 +10,31 @@ from rich.prompt import Prompt
 from github_standup_agent.agents.coordinator import create_coordinator_agent
 from github_standup_agent.config import StandupConfig
 from github_standup_agent.context import StandupContext
-from github_standup_agent.hooks import StandupRunHooks
-from github_standup_agent.instrumentation import setup_posthog
+from github_standup_agent.hooks import StandupAgentHooks, StandupRunHooks
+from github_standup_agent.instrumentation import capture_event, setup_posthog, shutdown_posthog
 
 console = Console()
+
+
+def _emit_standup_event(standup: str, context: StandupContext) -> None:
+    """Emit a PostHog event for a generated standup."""
+    from datetime import date
+
+    capture_event(
+        event_name="standup_generated",
+        properties={
+            "summary": standup,
+            "github_username": context.github_username,
+            "days_back": context.days_back,
+            "date": date.today().isoformat(),
+            "summary_length": len(standup),
+            "has_prs": bool(context.collected_prs),
+            "has_issues": bool(context.collected_issues),
+            "has_commits": bool(context.collected_commits),
+            "has_reviews": bool(context.collected_reviews),
+            "with_history": context.with_history,
+        },
+    )
 
 
 async def run_standup_generation(
@@ -53,11 +74,15 @@ async def run_standup_generation(
     # Initialize PostHog instrumentation (if configured)
     setup_posthog(distinct_id=github_username)
 
+    # Create agent hooks for verbose mode
+    agent_hooks = StandupAgentHooks(verbose=verbose) if verbose else None
+
     # Create the coordinator agent with configured models
     agent = create_coordinator_agent(
         model=config.coordinator_model,
         data_gatherer_model=config.data_gatherer_model,
         summarizer_model=config.summarizer_model,
+        hooks=agent_hooks,
     )
 
     # Build the prompt
@@ -79,50 +104,65 @@ After generating the summary, save it to history.
         trace_include_sensitive_data=True,
     )
 
-    if stream:
-        # Streaming mode
-        result_text = ""
-        stream_result = Runner.run_streamed(
-            agent,
-            input=prompt,
-            context=context,
-            run_config=run_config,
-            hooks=run_hooks,
-        )
-        async for event in stream_result.stream_events():
-            if hasattr(event, "data") and hasattr(event.data, "delta"):
-                console.print(event.data.delta, end="")
-                result_text += event.data.delta
+    try:
+        if stream:
+            # Streaming mode
+            result_text = ""
+            stream_result = Runner.run_streamed(
+                agent,
+                input=prompt,
+                context=context,
+                run_config=run_config,
+                hooks=run_hooks,
+            )
+            async for event in stream_result.stream_events():
+                if hasattr(event, "data") and hasattr(event.data, "delta"):
+                    console.print(event.data.delta, end="")
+                    result_text += event.data.delta
 
-        # Get final output
-        return context.current_standup or result_text
-    else:
-        # Non-streaming mode
-        result = await Runner.run(
-            agent,
-            input=prompt,
-            context=context,
-            run_config=run_config,
-            hooks=run_hooks,
-        )
+            # Get final output
+            final_standup = context.current_standup or result_text
 
-        # Extract the summary from the result
-        output = result.final_output
+            # Emit PostHog event for the generated standup
+            _emit_standup_event(final_standup, context)
 
-        # If structured output, extract the formatted summary
-        if hasattr(output, "formatted_summary"):
-            return str(output.formatted_summary)
+            return final_standup
+        else:
+            # Non-streaming mode
+            result = await Runner.run(
+                agent,
+                input=prompt,
+                context=context,
+                run_config=run_config,
+                hooks=run_hooks,
+            )
 
-        # Store in context and return
-        output_str = str(output)
-        context.current_standup = output_str
-        return output_str
+            # Extract the summary from the result
+            output = result.final_output
+
+            # If structured output, extract the formatted summary
+            if hasattr(output, "formatted_summary"):
+                final_standup = str(output.formatted_summary)
+            else:
+                final_standup = str(output)
+
+            # Store in context
+            context.current_standup = final_standup
+
+            # Emit PostHog event for the generated standup
+            _emit_standup_event(final_standup, context)
+
+            return final_standup
+    finally:
+        # Ensure PostHog events are flushed
+        shutdown_posthog()
 
 
 async def run_interactive_chat(
     config: StandupConfig,
     days_back: int = 1,
     github_username: str | None = None,
+    verbose: bool = False,
 ) -> None:
     """
     Run an interactive chat session for refining standups.
@@ -131,6 +171,7 @@ async def run_interactive_chat(
         config: The standup configuration
         days_back: Number of days to look back for activity
         github_username: GitHub username
+        verbose: Whether to show verbose output (agent activity, tool calls)
     """
     # Set up OpenAI API key
     api_key = config.get_api_key()
@@ -147,12 +188,19 @@ async def run_interactive_chat(
     # Initialize PostHog instrumentation (if configured)
     setup_posthog(distinct_id=github_username)
 
+    # Create agent hooks for verbose mode
+    agent_hooks = StandupAgentHooks(verbose=verbose) if verbose else None
+
     # Create the coordinator agent
     agent = create_coordinator_agent(
         model=config.coordinator_model,
         data_gatherer_model=config.data_gatherer_model,
         summarizer_model=config.summarizer_model,
+        hooks=agent_hooks,
     )
+
+    # Create run hooks for verbose mode
+    run_hooks = StandupRunHooks(verbose=verbose)
 
     run_config = RunConfig(
         workflow_name="standup_chat",
@@ -166,58 +214,63 @@ async def run_interactive_chat(
     # Chat loop
     conversation_history: list[dict[str, Any]] = []
 
-    while True:
-        try:
-            user_input = Prompt.ask("[bold blue]You[/bold blue]")
-        except (EOFError, KeyboardInterrupt):
-            break
+    try:
+        while True:
+            try:
+                user_input = Prompt.ask("[bold blue]You[/bold blue]")
+            except (EOFError, KeyboardInterrupt):
+                break
 
-        if not user_input.strip():
-            continue
+            if not user_input.strip():
+                continue
 
-        # Check for exit commands
-        if user_input.lower() in ("exit", "quit", "bye", "q"):
-            console.print("[dim]Goodbye! Your standup was saved.[/dim]")
-            break
+            # Check for exit commands
+            if user_input.lower() in ("exit", "quit", "bye", "q"):
+                console.print("[dim]Goodbye! Your standup was saved.[/dim]")
+                break
 
-        # Add user message to history
-        conversation_history.append({"role": "user", "content": user_input})
+            # Add user message to history
+            conversation_history.append({"role": "user", "content": user_input})
 
-        # Build context-aware prompt
-        if not conversation_history[:-1]:
-            # First message - include setup context
-            prompt = f"""The user wants to generate a standup. Context:
+            # Build context-aware prompt
+            if not conversation_history[:-1]:
+                # First message - include setup context
+                prompt = f"""The user wants to generate a standup. Context:
 - GitHub username: {github_username}
 - Days to look back: {days_back}
 - History context is enabled
 
 User request: {user_input}
 """
-        else:
-            prompt = user_input
+            else:
+                prompt = user_input
 
-        try:
-            # Run the agent
-            console.print()
-            result = await Runner.run(
-                agent,
-                input=prompt,
-                context=context,
-                run_config=run_config,
-            )
+            try:
+                # Run the agent
+                console.print()
+                result = await Runner.run(
+                    agent,
+                    input=prompt,
+                    context=context,
+                    run_config=run_config,
+                    hooks=run_hooks,
+                )
 
-            output = str(result.final_output)
+                output = str(result.final_output)
 
-            # Update context with current standup if it looks like one
-            if "Yesterday" in output or "Today" in output or "worked on" in output.lower():
-                context.current_standup = output
+                # Update context with current standup if it looks like one
+                if "Yesterday" in output or "Today" in output or "worked on" in output.lower():
+                    context.current_standup = output
 
-            # Display the response
-            console.print(f"[bold green]Assistant[/bold green]: {output}\n")
+                # Display the response
+                console.print(f"[bold green]Assistant[/bold green]: {output}\n")
 
-            # Add to history
-            conversation_history.append({"role": "assistant", "content": output})
+                # Add to history
+                conversation_history.append({"role": "assistant", "content": output})
 
-        except Exception as e:
-            console.print(f"[red]Error: {e}[/red]\n")
-            continue
+            except Exception as e:
+                console.print(f"[red]Error: {e}[/red]\n")
+                continue
+    finally:
+        # Ensure PostHog events are flushed
+        shutdown_posthog()

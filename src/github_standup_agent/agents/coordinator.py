@@ -1,8 +1,8 @@
 """Coordinator Agent - orchestrates the standup generation workflow."""
 
-from agents import Agent, ModelSettings
+from agents import Agent, AgentHooks, ModelSettings
 
-from github_standup_agent.agents.summarizer import summarizer_agent
+from github_standup_agent.agents.summarizer import create_summarizer_agent
 from github_standup_agent.context import StandupContext
 from github_standup_agent.tools.clipboard import copy_to_clipboard
 from github_standup_agent.tools.history import get_recent_standups, save_standup
@@ -38,16 +38,18 @@ def create_coordinator_agent(
     model: str = "gpt-4o",
     data_gatherer_model: str = "gpt-4o-mini",
     summarizer_model: str = "gpt-4o",
+    hooks: AgentHooks[StandupContext] | None = None,
 ) -> Agent[StandupContext]:
     """Create the coordinator agent with configured sub-agents."""
     from github_standup_agent.agents.data_gatherer import create_data_gatherer_agent
 
-    data_gatherer = create_data_gatherer_agent(model=data_gatherer_model)
+    data_gatherer = create_data_gatherer_agent(model=data_gatherer_model, hooks=hooks)
+    summarizer = create_summarizer_agent(model=summarizer_model, hooks=hooks)
 
     return Agent[StandupContext](
         name="Standup Coordinator",
         instructions=COORDINATOR_INSTRUCTIONS,
-        handoffs=[data_gatherer, summarizer_agent],
+        handoffs=[data_gatherer, summarizer],
         tools=[
             copy_to_clipboard,
             get_recent_standups,
@@ -57,8 +59,9 @@ def create_coordinator_agent(
         model_settings=ModelSettings(
             temperature=0.5,
         ),
+        hooks=hooks,
     )
 
 
-# Default instance
+# Default instance (without hooks - use create_coordinator_agent for verbose mode)
 coordinator_agent = create_coordinator_agent()

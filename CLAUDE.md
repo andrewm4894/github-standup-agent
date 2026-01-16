@@ -65,10 +65,12 @@ def get_my_prs(
 ### CLI Commands
 
 Entry point is `standup` (defined in `cli.py` using Typer):
-- `standup generate [--days N] [--output clipboard] [--with-history]`
-- `standup chat [--days N]` - interactive refinement session
+- `standup generate [--days N] [--output clipboard] [--with-history] [--verbose/--quiet]`
+- `standup chat [--days N] [--verbose/--quiet]` - interactive refinement session
 - `standup history [--list] [--date YYYY-MM-DD] [--clear]`
 - `standup config [--show] [--set-github-user X] [--set-model X]`
+
+Verbose mode (on by default) shows agent activity: tool calls, handoffs, timing. Use `--quiet` to disable.
 
 ## Configuration
 
@@ -85,6 +87,7 @@ Enable agent tracing to PostHog by setting environment variables:
 - `POSTHOG_API_KEY` - Enables PostHog agent tracing when set
 - `POSTHOG_HOST` - PostHog host (default: https://us.posthog.com)
 - `POSTHOG_DISTINCT_ID` - User identifier (defaults to github_username)
+- `POSTHOG_DEBUG` - Set to "true" for verbose PostHog logging
 
 Install the PostHog SDK:
 ```bash
@@ -92,3 +95,11 @@ uv pip install posthog>=7.6.0
 # Or for local development with unreleased features:
 uv pip install -e ../posthog-python
 ```
+
+### Custom Events
+
+When PostHog is enabled, the following custom events are emitted:
+- `standup_generated` - Emitted after every standup generation with full summary and metadata
+- `standup_saved` - Emitted when the agent explicitly calls the `save_standup` tool
+
+Event properties include: `summary`, `github_username`, `days_back`, `date`, `summary_length`, `has_prs`, `has_issues`, `has_commits`, `has_reviews`

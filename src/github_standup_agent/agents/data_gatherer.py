@@ -1,6 +1,6 @@
 """Data Gatherer Agent - collects GitHub activity data."""
 
-from agents import Agent, ModelSettings
+from agents import Agent, AgentHooks, ModelSettings
 
 from github_standup_agent.context import StandupContext
 from github_standup_agent.tools.github_activity import get_activity_summary
@@ -26,7 +26,10 @@ Important: Use the context's days_back value to determine the time range for dat
 """
 
 
-def create_data_gatherer_agent(model: str = "gpt-4o-mini") -> Agent[StandupContext]:
+def create_data_gatherer_agent(
+    model: str = "gpt-4o-mini",
+    hooks: AgentHooks[StandupContext] | None = None,
+) -> Agent[StandupContext]:
     """Create the data gatherer agent with all GitHub tools."""
     return Agent[StandupContext](
         name="Data Gatherer",
@@ -43,6 +46,7 @@ def create_data_gatherer_agent(model: str = "gpt-4o-mini") -> Agent[StandupConte
         model_settings=ModelSettings(
             temperature=0.3,  # Lower temperature for more deterministic tool usage
         ),
+        hooks=hooks,
     )
 
 

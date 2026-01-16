@@ -4,6 +4,7 @@ import time
 from typing import Any
 
 from agents import Agent, AgentHooks, RunContextWrapper, RunHooks, Tool
+from agents.run_context import AgentHookContext
 from rich.console import Console
 
 from github_standup_agent.context import StandupContext
@@ -48,7 +49,7 @@ class StandupAgentHooks(AgentHooks[StandupContext]):
 
     async def on_start(
         self,
-        context: RunContextWrapper[StandupContext],
+        context: AgentHookContext[StandupContext],
         agent: Agent[StandupContext],
     ) -> None:
         """Called when an agent starts processing."""
@@ -57,7 +58,7 @@ class StandupAgentHooks(AgentHooks[StandupContext]):
 
     async def on_end(
         self,
-        context: RunContextWrapper[StandupContext],
+        context: AgentHookContext[StandupContext],
         agent: Agent[StandupContext],
         output: Any,
     ) -> None:
@@ -68,12 +69,12 @@ class StandupAgentHooks(AgentHooks[StandupContext]):
     async def on_handoff(
         self,
         context: RunContextWrapper[StandupContext],
-        from_agent: Agent[StandupContext],
-        to_agent: Agent[StandupContext],
+        agent: Agent[StandupContext],
+        source: Agent[StandupContext],
     ) -> None:
         """Called when one agent hands off to another."""
         if self.verbose:
-            console.print(f"[yellow]Handoff: {from_agent.name} → {to_agent.name}[/yellow]")
+            console.print(f"[yellow]Handoff: {source.name} → {agent.name}[/yellow]")
 
     async def on_tool_start(
         self,

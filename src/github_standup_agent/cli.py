@@ -65,6 +65,10 @@ def generate(
         bool,
         typer.Option("--stream", "-s", help="Stream output in real-time."),
     ] = False,
+    verbose: Annotated[
+        bool,
+        typer.Option("--verbose/--quiet", "-V/-q", help="Show agent activity (tool calls, handoffs)."),
+    ] = True,
 ) -> None:
     """Generate a standup summary from your GitHub activity."""
     from github_standup_agent.runner import run_standup_generation
@@ -92,6 +96,7 @@ def generate(
                 with_history=with_history,
                 github_username=github_user,
                 stream=stream,
+                verbose=verbose,
             )
         )
 
@@ -115,6 +120,10 @@ def chat(
         int,
         typer.Option("--days", "-d", help="Number of days to look back."),
     ] = 1,
+    verbose: Annotated[
+        bool,
+        typer.Option("--verbose/--quiet", "-V/-q", help="Show agent activity (tool calls, handoffs)."),
+    ] = True,
 ) -> None:
     """Start an interactive chat session to refine your standup."""
     from github_standup_agent.runner import run_interactive_chat
@@ -149,6 +158,7 @@ def chat(
                 config=config,
                 days_back=days,
                 github_username=github_user,
+                verbose=verbose,
             )
         )
     except KeyboardInterrupt:

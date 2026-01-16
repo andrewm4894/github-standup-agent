@@ -1,6 +1,6 @@
 """Summarizer Agent - generates standup summaries from collected data."""
 
-from agents import Agent, ModelSettings
+from agents import Agent, AgentHooks, ModelSettings
 from pydantic import BaseModel, Field
 
 from github_standup_agent.context import StandupContext
@@ -52,7 +52,10 @@ Always store the generated summary in context.current_standup for later use.
 """
 
 
-def create_summarizer_agent(model: str = "gpt-4o") -> Agent[StandupContext]:
+def create_summarizer_agent(
+    model: str = "gpt-4o",
+    hooks: AgentHooks[StandupContext] | None = None,
+) -> Agent[StandupContext]:
     """Create the summarizer agent."""
     return Agent[StandupContext](
         name="Summarizer",
@@ -69,6 +72,7 @@ def create_summarizer_agent(model: str = "gpt-4o") -> Agent[StandupContext]:
         ),
         # Use structured output for consistent formatting
         output_type=StandupSummary,
+        hooks=hooks,
     )
 
 

@@ -5,6 +5,7 @@ from typing import Any
 
 _posthog_client: Any = None
 _instrumentation_enabled = False
+_current_distinct_id: str | None = None
 
 # Check for debug mode
 POSTHOG_DEBUG = os.getenv("POSTHOG_DEBUG", "false").lower() in ("true", "1", "yes")
@@ -25,7 +26,7 @@ def setup_posthog(distinct_id: str | None = None) -> bool:
     Returns:
         True if instrumentation was enabled, False otherwise.
     """
-    global _posthog_client, _instrumentation_enabled
+    global _posthog_client, _instrumentation_enabled, _current_distinct_id
 
     api_key = os.getenv("POSTHOG_API_KEY")
     if not api_key:
@@ -54,6 +55,7 @@ def setup_posthog(distinct_id: str | None = None) -> bool:
             print(f"[PostHog] Instrumentation enabled, processor={processor}")
 
         _instrumentation_enabled = True
+        _current_distinct_id = user_id
         return True
 
     except ImportError:
@@ -79,3 +81,54 @@ def shutdown_posthog() -> None:
 def is_enabled() -> bool:
     """Check if PostHog instrumentation is active."""
     return _instrumentation_enabled
+
+
+def get_client() -> Any:
+    """Get the PostHog client instance (if initialized)."""
+    return _posthog_client
+
+
+def get_distinct_id() -> str | None:
+    """Get the current distinct_id used for PostHog."""
+    return _current_distinct_id
+
+
+def capture_event(
+    event_name: str,
+    properties: dict[str, Any] | None = None,
+    distinct_id: str | None = None,
+) -> bool:
+    """
+    Capture a custom event to PostHog.
+
+    Args:
+        event_name: Name of the event (e.g., "standup_saved")
+        properties: Event properties/metadata
+        distinct_id: Override distinct_id (defaults to configured user)
+
+    Returns:
+        True if event was captured, False if PostHog not enabled.
+    """
+    if not _posthog_client or not _instrumentation_enabled:
+        return False
+
+    user_id = distinct_id or _current_distinct_id or "standup-agent-user"
+
+    try:
+        _posthog_client.capture(
+            distinct_id=user_id,
+            event=event_name,
+            properties=properties or {},
+        )
+
+        # Flush immediately to ensure event is sent
+        _posthog_client.flush()
+
+        if POSTHOG_DEBUG:
+            print(f"[PostHog] Captured event: {event_name}")
+
+        return True
+    except Exception as e:
+        if POSTHOG_DEBUG:
+            print(f"[PostHog] Failed to capture event: {e}")
+        return False
