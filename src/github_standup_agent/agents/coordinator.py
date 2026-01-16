@@ -5,7 +5,11 @@ from agents import Agent, AgentHooks, ModelSettings
 from github_standup_agent.agents.summarizer import create_summarizer_agent
 from github_standup_agent.context import StandupContext
 from github_standup_agent.tools.clipboard import copy_to_clipboard
-from github_standup_agent.tools.history import get_recent_standups, save_standup
+from github_standup_agent.tools.history import (
+    get_recent_standups,
+    save_standup,
+    save_standup_to_file,
+)
 
 COORDINATOR_INSTRUCTIONS = """You are a standup generation coordinator. You help users create
 daily standup summaries from their GitHub activity.
@@ -17,7 +21,7 @@ Your workflow:
 
 For interactive chat sessions:
 - Respond to refinement requests by working with the Summarizer
-- Handle commands like "copy to clipboard" or "save" directly
+- Handle commands like "copy to clipboard", "save", or "save to file" directly
 - Be helpful and responsive to feedback
 
 Available handoffs:
@@ -65,6 +69,7 @@ def create_coordinator_agent(
             copy_to_clipboard,
             get_recent_standups,
             save_standup,
+            save_standup_to_file,
         ],
         model=model,
         model_settings=ModelSettings(

@@ -61,3 +61,6 @@ Thumbs.db
 # Personal style configuration (use *.example.md as templates)
 style.md
 examples.md
+
+# Generated standup file
+standup.md
