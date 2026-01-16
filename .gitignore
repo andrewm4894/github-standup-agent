@@ -57,3 +57,7 @@ Thumbs.db
 # Project specific
 *.db
 .config/
+
+# Personal style configuration (use *.example.md as templates)
+style.md
+examples.md

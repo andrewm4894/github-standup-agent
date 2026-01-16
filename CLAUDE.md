@@ -69,7 +69,7 @@ Entry point is `standup` (defined in `cli.py` using Typer):
 - `standup chat [--days N] [--verbose/--quiet] [--resume] [--session NAME]` - interactive refinement session
 - `standup sessions [--list] [--clear]` - manage chat sessions
 - `standup history [--list] [--date YYYY-MM-DD] [--clear]`
-- `standup config [--show] [--set-github-user X] [--set-model X] [--set-style X] [--init-style] [--edit-style]`
+- `standup config [--show] [--set-github-user X] [--set-model X] [--set-style X] [--init-style] [--edit-style] [--init-examples] [--edit-examples]`
 
 Verbose mode (on by default) shows agent activity: tool calls, handoffs, timing. Use `--quiet` to disable.
 
@@ -113,14 +113,42 @@ Example `style.md` content:
 - Use past tense for completed work, present for ongoing
 ```
 
-**Priority order**: style.md file + config style_instructions are combined (file first, then config).
+**Priority order**: style.md file + config style_instructions + examples.md are combined.
+
+### Example Standups (via examples.md file)
+
+Provide real examples of standups you like. This is "few-shot prompting" - the AI will match the tone, format, and level of detail from your examples.
+
+```bash
+standup config --init-examples    # Creates ~/.config/standup-agent/examples.md
+standup config --edit-examples    # Opens the file in your editor
+```
+
+Example `examples.md` content:
+```markdown
+# Example Standups
+
+## Example 1
+
+Did:
+- merged js sdk for llma / error tracking - pr
+- added prom metrics for nodejs ai processing stuff - pr
+- deep dive on why my code not deployed - learned some stuff - thread in dev
+- refactored eval pr to add NA option following Carlos suggestion - pr
+
+Will Do:
+- if get clustering pr3 merged then will manually register both temporal workflows in prod
+- docs and next steps for errors tab out of alpha work
+```
 
 ### CLI Commands
 
-- `standup config --show` - Shows current style configuration
+- `standup config --show` - Shows current style and examples configuration
 - `standup config --set-style "..."` - Set quick style instructions
 - `standup config --init-style` - Create style.md template
 - `standup config --edit-style` - Open style.md in editor
+- `standup config --init-examples` - Create examples.md template
+- `standup config --edit-examples` - Open examples.md in editor
 
 ## Chat Sessions
 

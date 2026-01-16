@@ -14,10 +14,13 @@ load_dotenv()
 
 from github_standup_agent import __version__
 from github_standup_agent.config import (
+    EXAMPLES_FILE,
     STYLE_FILE,
     StandupConfig,
+    create_default_examples_file,
     create_default_style_file,
     get_github_username,
+    load_examples_from_file,
     load_style_from_file,
 )
 
@@ -263,6 +266,14 @@ def config(
         bool,
         typer.Option("--edit-style", help="Open style.md in your default editor."),
     ] = False,
+    init_examples: Annotated[
+        bool,
+        typer.Option("--init-examples", help="Create an examples.md template file."),
+    ] = False,
+    edit_examples: Annotated[
+        bool,
+        typer.Option("--edit-examples", help="Open examples.md in your default editor."),
+    ] = False,
 ) -> None:
     """Manage standup-agent configuration."""
     cfg = StandupConfig.load()
@@ -327,16 +338,50 @@ def config(
             console.print(f"[yellow]Could not find editor. Edit manually:[/yellow] {STYLE_FILE}")
         return
 
-    if show or not any(
-        [set_openai_key, set_github_user, set_model, set_style, init_style, edit_style]
-    ):
+    if init_examples:
+        if EXAMPLES_FILE.exists():
+            if not typer.confirm(f"Examples file already exists at {EXAMPLES_FILE}. Overwrite?"):
+                console.print("[yellow]Cancelled.[/yellow]")
+                return
+        examples_path = create_default_examples_file()
+        console.print(f"[green]Created examples template at:[/green] {examples_path}")
+        console.print("[dim]Add real standup examples to help the AI match your style.[/dim]")
+        return
+
+    if edit_examples:
+        import shutil
+        import subprocess
+
+        if not EXAMPLES_FILE.exists():
+            create_default_examples_file()
+            console.print(f"[dim]Created new examples.md at {EXAMPLES_FILE}[/dim]")
+
+        # Try to open in editor
+        editor = os.environ.get("EDITOR", "")
+        if not editor:
+            # Try common editors
+            for ed in ["code", "vim", "nano", "vi"]:
+                if shutil.which(ed):
+                    editor = ed
+                    break
+
+        if editor:
+            subprocess.run([editor, str(EXAMPLES_FILE)])
+        else:
+            console.print(f"[yellow]Could not find editor. Edit manually:[/yellow] {EXAMPLES_FILE}")
+        return
+
+    if show or not any([
+        set_openai_key, set_github_user, set_model, set_style,
+        init_style, edit_style, init_examples, edit_examples,
+    ]):
         detected_user = get_github_username()
         api_key_status = "Set" if cfg.openai_api_key else "Not set (check env)"
 
         # Style status
-        file_style = load_style_from_file()
-        if file_style:
-            style_status = f"[green]Loaded from {STYLE_FILE}[/green]"
+        loaded_style, loaded_style_path = load_style_from_file()
+        if loaded_style and loaded_style_path:
+            style_status = f"[green]Loaded from {loaded_style_path}[/green]"
         elif cfg.style_instructions:
             style_status = (
                 f"[green]Config: {cfg.style_instructions[:50]}...[/green]"
@@ -345,6 +390,13 @@ def config(
             )
         else:
             style_status = "[dim]Default (use --init-style to customize)[/dim]"
+
+        # Examples status
+        loaded_examples, loaded_examples_path = load_examples_from_file()
+        if loaded_examples and loaded_examples_path:
+            examples_status = f"[green]Loaded from {loaded_examples_path}[/green]"
+        else:
+            examples_status = "[dim]None (use --init-examples to add)[/dim]"
 
         username = cfg.github_username or detected_user or "Not set"
         console.print(
@@ -356,7 +408,8 @@ def config(
                 f"[bold]Data Gatherer Model:[/bold] {cfg.data_gatherer_model}\n"
                 f"[bold]Summarizer Model:[/bold] {cfg.summarizer_model}\n"
                 f"[bold]Temperature:[/bold] {cfg.temperature}\n"
-                f"[bold]Style:[/bold] {style_status}",
+                f"[bold]Style:[/bold] {style_status}\n"
+                f"[bold]Examples:[/bold] {examples_status}",
                 title="Configuration",
                 border_style="cyan",
             )
