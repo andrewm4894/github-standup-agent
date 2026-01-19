@@ -53,15 +53,35 @@ Coordinator Agent (gpt-5.2)
 Tools receive context via `RunContextWrapper[StandupContext]` as first parameter:
 ```python
 @function_tool
-def get_my_prs(
+def list_prs(
     ctx: RunContextWrapper[StandupContext],
-    days_back: Annotated[int, "Number of days to look back"] = 1,
+    filter_by: Annotated[
+        Literal["authored", "reviewed", "assigned", "involves", "review-requested"],
+        "Filter mode for PR search",
+    ] = "authored",
+    username: Annotated[str | None, "GitHub username (defaults to current user)"] = None,
+    days_back: Annotated[int, "Number of days to look back"] = 7,
 ) -> str:
-    username = ctx.context.github_username
+    target_user = username or ctx.context.github_username
     # ... execute gh CLI command
     ctx.context.collected_prs = results  # Store in context
     return formatted_output
 ```
+
+### GitHub Tools Structure
+
+Tools are organized in `tools/github/` with a two-tier pattern:
+
+**Overview/List Tools** (for discovery):
+- `get_activity_feed` - Chronological feed of all GitHub activity (start here)
+- `list_prs` - Search PRs with flexible `filter_by` (authored/reviewed/assigned/involves/review-requested)
+- `list_issues` - Search issues with flexible `filter_by` (authored/assigned/mentions/involves)
+- `list_commits` - Search commits by user
+- `list_reviews` - Fetch reviews given or received with actual states (APPROVED, CHANGES_REQUESTED, etc.)
+
+**Detail Tools** (for drill-down):
+- `get_pr_details(repo, number)` - Full PR context (body, reviews, CI status, linked issues)
+- `get_issue_details(repo, number)` - Full issue context (body, linked PRs, labels)
 
 ### CLI Commands
 

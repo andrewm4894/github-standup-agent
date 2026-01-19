@@ -88,7 +88,7 @@ flowchart LR
     subgraph DataGatherer["Data Gatherer Agent (as tool)"]
         direction TB
         dg_inst["Instructions"]
-        dg_tools["Tools:<br/>- get_my_prs<br/>- get_my_issues<br/>- get_my_commits<br/>- get_my_reviews<br/>- get_activity_summary<br/>- get_team_slack_standups"]
+        dg_tools["Tools:<br/>- get_activity_feed<br/>- list_prs<br/>- list_issues<br/>- list_commits<br/>- list_reviews<br/>- get_pr_details<br/>- get_issue_details<br/>- get_team_slack_standups"]
     end
 
     subgraph Summarizer["Summarizer Agent (as tool)"]
@@ -130,13 +130,15 @@ sequenceDiagram
     Runner->>Coordinator: "Generate standup for last 1 day(s)"
 
     Coordinator->>DataGatherer: gather_github_data
-    DataGatherer->>GitHub: get_my_prs
+    DataGatherer->>GitHub: get_activity_feed
+    GitHub-->>DataGatherer: Activity events
+    DataGatherer->>GitHub: list_prs (filter_by=involves)
     GitHub-->>DataGatherer: PR data
-    DataGatherer->>GitHub: get_my_issues
+    DataGatherer->>GitHub: list_issues
     GitHub-->>DataGatherer: Issue data
-    DataGatherer->>GitHub: get_my_commits
+    DataGatherer->>GitHub: list_commits
     GitHub-->>DataGatherer: Commit data
-    DataGatherer->>GitHub: get_my_reviews
+    DataGatherer->>GitHub: list_reviews (given + received)
     GitHub-->>DataGatherer: Review data
 
     opt Slack configured
@@ -225,6 +227,9 @@ classDiagram
         +list~dict~ collected_issues
         +list~dict~ collected_commits
         +list~dict~ collected_reviews
+        +list~dict~ collected_activity_feed
+        +dict~str,dict~ pr_details_cache
+        +dict~str,dict~ issue_details_cache
         +list~dict~ recent_standups
         +str current_standup
         +str github_username
@@ -290,21 +295,28 @@ flowchart TB
 
 ### GitHub Tools (Data Gatherer)
 
+Tools are organized in `tools/github/` with a two-tier pattern: overview/list tools for discovery, detail tools for drill-down.
+
 | Tool | File | Description |
 |------|------|-------------|
-| `get_my_prs` | `tools/github_prs.py` | Fetch PRs authored by user |
-| `get_my_issues` | `tools/github_issues.py` | Fetch issues assigned/created |
-| `get_my_commits` | `tools/github_commits.py` | Fetch recent commits |
-| `get_my_reviews` | `tools/github_reviews.py` | Fetch code review activity |
-| `get_activity_summary` | `tools/github_activity.py` | Overall activity summary |
+| `get_activity_feed` | `tools/github/github_events.py` | Chronological feed of all activity (start here) |
+| `get_activity_summary` | `tools/github/github_activity.py` | Aggregate contribution statistics |
+| `list_prs` | `tools/github/github_prs.py` | Search PRs with flexible filters (authored/reviewed/assigned/involves) |
+| `list_issues` | `tools/github/github_issues.py` | Search issues with flexible filters |
+| `list_commits` | `tools/github/github_commits.py` | Search commits by user |
+| `list_reviews` | `tools/github/github_reviews.py` | Fetch reviews given or received with actual states |
+| `get_pr_details` | `tools/github/github_prs.py` | Full PR context (body, reviews, CI, linked issues) |
+| `get_issue_details` | `tools/github/github_issues.py` | Full issue context (body, linked PRs, labels) |
 
 ### Slack Tools
 
+Tools are organized in `tools/slack/`.
+
 | Tool | File | Description |
 |------|------|-------------|
-| `get_team_slack_standups` | `tools/slack_standups.py` | Read team standup threads |
-| `publish_standup_to_slack` | `tools/slack_publish.py` | Post standup to thread |
-| `confirm_slack_publish` | `tools/slack_publish.py` | Set confirmation flag |
+| `get_team_slack_standups` | `tools/slack/slack_standups.py` | Read team standup threads |
+| `publish_standup_to_slack` | `tools/slack/slack_publish.py` | Post standup to thread |
+| `confirm_slack_publish` | `tools/slack/slack_publish.py` | Set confirmation flag |
 
 ### Utility Tools
 
@@ -376,10 +388,20 @@ src/github_standup_agent/
 │   ├── data_gatherer.py   # GitHub data collection agent
 │   └── summarizer.py      # Summary generation agent
 ├── tools/
-│   ├── github_*.py        # GitHub CLI wrappers
-│   ├── slack_*.py         # Slack API tools
+│   ├── __init__.py        # Re-exports all tools
 │   ├── clipboard.py       # System clipboard
-│   └── history.py         # History DB tools
+│   ├── history.py         # History DB tools
+│   ├── github/            # GitHub CLI wrappers
+│   │   ├── github_activity.py   # get_activity_summary
+│   │   ├── github_events.py     # get_activity_feed
+│   │   ├── github_prs.py        # list_prs, get_pr_details
+│   │   ├── github_issues.py     # list_issues, get_issue_details
+│   │   ├── github_commits.py    # list_commits
+│   │   └── github_reviews.py    # list_reviews
+│   └── slack/             # Slack API tools
+│       ├── slack_client.py      # Slack API client
+│       ├── slack_standups.py    # get_team_slack_standups
+│       └── slack_publish.py     # publish_standup_to_slack
 └── guardrails/
     ├── input_guardrails.py
     └── output_guardrails.py
