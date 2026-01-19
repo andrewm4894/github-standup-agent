@@ -5,13 +5,14 @@ AI-powered daily standup summaries from your GitHub activity, built with the [Op
 ## Features
 
 - **Automatic GitHub Activity Collection**: Pulls your PRs, issues, commits, and code reviews using the `gh` CLI
+- **Slack Integration**: Read team standups for context and publish your standup directly to Slack threads
 - **AI-Powered Summarization**: Creates concise, well-formatted standup summaries
 - **Interactive Chat Mode**: Refine your standup through conversation ("make it shorter", "ignore the docs PR")
 - **Session Persistence**: Resume chat sessions later, use named sessions for recurring standups
 - **Style Customization**: Define your team's standup format with `style.md` and example standups
 - **Historical Context**: References past standups to maintain continuity and avoid repetition
-- **Multiple Output Options**: Print to terminal or copy to clipboard
-- **Fully Local**: Your data never leaves your machine (except for OpenAI API calls)
+- **Multiple Output Options**: Print to terminal, copy to clipboard, or publish to Slack
+- **Fully Local**: Your data never leaves your machine (except for OpenAI/Slack API calls)
 
 ## Architecture
 
@@ -121,6 +122,9 @@ Example session:
 
 > perfect, copy to clipboard
 ✅ Copied to clipboard!
+
+> publish to slack
+✅ Posted standup to #standups
 ```
 
 ### View History
@@ -184,6 +188,38 @@ See `style.example.md` and `examples.example.md` for templates.
 
 **File locations:** The CLI checks the current directory first, then `~/.config/standup-agent/`. This lets you keep project-specific styles in your repo (gitignored).
 
+### Slack Integration
+
+Optionally connect to Slack to read team standups and publish your own:
+
+```bash
+# Set your Slack channel
+standup config --set-slack-channel standups
+
+# Set your Slack bot token (keep this secure)
+export STANDUP_SLACK_BOT_TOKEN="xoxb-..."
+```
+
+**Required Slack Bot Permissions:**
+- `channels:history` - Read messages in public channels
+- `channels:read` - View basic channel info
+- `chat:write` - Post messages
+
+**In chat mode, you can publish directly to Slack:**
+```
+> generate my standup
+[standup generated]
+
+> publish to slack
+Preview: Your standup will be posted to #standups...
+Please confirm by saying "yes" or "publish it"
+
+> yes
+✅ Posted standup to #standups
+```
+
+The agent reads existing standup threads (posts starting with "Standup") and publishes your standup as a reply to the most recent thread.
+
 ### Configuration
 
 ```bash
@@ -206,6 +242,8 @@ standup config --set-model gpt-4o
 | `STANDUP_COORDINATOR_MODEL` | Model for coordinator agent | gpt-4o |
 | `STANDUP_DATA_GATHERER_MODEL` | Model for data gathering | gpt-4o-mini |
 | `STANDUP_SUMMARIZER_MODEL` | Model for summarization | gpt-4o |
+| `STANDUP_SLACK_BOT_TOKEN` | Slack bot token for integration | - |
+| `STANDUP_SLACK_CHANNEL` | Default Slack channel (or use config) | - |
 
 Config file location: `~/.config/standup-agent/config.json`
 

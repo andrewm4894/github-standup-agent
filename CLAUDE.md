@@ -29,9 +29,10 @@ Coordinator Agent (gpt-4o)
     │
     ├── handoff to → Data Gatherer Agent (gpt-4o-mini)
     │                   └── uses gh CLI tools to collect PRs, issues, commits, reviews
+    │                   └── optionally fetches team standups from Slack
     │
     └── handoff to → Summarizer Agent (gpt-4o)
-                        └── creates formatted standup, can save/copy
+                        └── creates formatted standup, can save/copy/publish to Slack
 ```
 
 ### Key Components
@@ -42,7 +43,7 @@ Coordinator Agent (gpt-4o)
   - `coordinator.py`: Orchestrates workflow, handles commands like copy/save
   - `data_gatherer.py`: Collects GitHub data using function tools
   - `summarizer.py`: Creates summaries, supports structured output via `StandupSummary` Pydantic model
-- **`tools/`**: Function tools decorated with `@function_tool` that wrap `gh` CLI commands
+- **`tools/`**: Function tools decorated with `@function_tool` that wrap `gh` CLI and Slack API calls
 - **`guardrails/`**: Input/output validation (e.g., `validate_days_guardrail` limits lookback range)
 - **`hooks.py`**: `RunHooks` and `AgentHooks` for logging/observability
 - **`db.py`**: SQLite persistence for standup history at `~/.config/standup-agent/standups.db`
@@ -69,7 +70,7 @@ Entry point is `standup` (defined in `cli.py` using Typer):
 - `standup chat [--days N] [--verbose/--quiet] [--resume] [--session NAME]` - interactive refinement session
 - `standup sessions [--list] [--clear]` - manage chat sessions
 - `standup history [--list] [--date YYYY-MM-DD] [--clear]`
-- `standup config [--show] [--set-github-user X] [--set-model X] [--set-style X] [--init-style] [--edit-style] [--init-examples] [--edit-examples]`
+- `standup config [--show] [--set-github-user X] [--set-model X] [--set-style X] [--set-slack-channel X] [--init-style] [--edit-style] [--init-examples] [--edit-examples]`
 
 Verbose mode (on by default) shows agent activity: tool calls, handoffs, timing. Use `--quiet` to disable.
 
@@ -79,6 +80,8 @@ Environment variables:
 - `OPENAI_API_KEY` (required)
 - `STANDUP_GITHUB_USER` - override auto-detected username
 - `STANDUP_COORDINATOR_MODEL`, `STANDUP_DATA_GATHERER_MODEL`, `STANDUP_SUMMARIZER_MODEL`
+- `STANDUP_SLACK_BOT_TOKEN` - Slack bot token for reading/publishing standups
+- `STANDUP_SLACK_CHANNEL` - default Slack channel (can also set via CLI)
 
 Config file: `~/.config/standup-agent/config.json`
 
@@ -184,6 +187,47 @@ Sessions use the SDK's memory feature to automatically:
 3. Provide full context to the agent for better responses
 
 Session IDs follow the pattern `chat_{name}` or `chat_{username}_{date}` for auto-generated sessions.
+
+## Slack Integration (optional)
+
+Enable Slack integration to read team standups and publish your own standup to Slack threads.
+
+### Setup
+
+```bash
+# Set channel via CLI
+standup config --set-slack-channel standups
+
+# Set bot token via environment variable (recommended for security)
+export STANDUP_SLACK_BOT_TOKEN="xoxb-..."
+```
+
+### Required Bot Permissions
+
+- `channels:history` - Read messages in public channels
+- `channels:read` - View basic channel info
+- `chat:write` - Post messages
+
+### Slack Tools
+
+- **`get_team_slack_standups`**: Fetches recent standup threads from configured channel, collects replies from team members
+- **`publish_standup_to_slack`**: Posts standup as a reply to the most recent standup thread (requires user confirmation)
+- **`confirm_slack_publish`**: Sets confirmation flag after user approves publishing
+
+### Context Fields
+
+The `StandupContext` includes Slack-related state:
+- `collected_slack_standups: list[dict]` - Team standup threads and replies
+- `slack_thread_ts: str | None` - Thread timestamp for publishing
+- `slack_channel_id: str | None` - Resolved channel ID
+- `slack_publish_confirmed: bool` - Confirmation flag for publish safety
+
+### Workflow
+
+1. Data Gatherer optionally calls `get_team_slack_standups` if Slack is configured
+2. Summarizer can use team context when generating standups
+3. User requests "publish to slack" - Coordinator shows preview
+4. User confirms - Coordinator calls `confirm_slack_publish` then `publish_standup_to_slack`
 
 ## PostHog Instrumentation (optional)
 
