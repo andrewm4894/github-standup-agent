@@ -28,6 +28,7 @@ dependencies = [
     "python-dotenv>=1.0.0",
     "rich>=13.0",
     "pyperclip>=1.8.0",
+    "slack_sdk>=3.27.0",
 ]
 
 [project.optional-dependencies]

@@ -11,6 +11,11 @@ from github_standup_agent.tools.history import (
     save_standup,
     save_standup_to_file,
 )
+from github_standup_agent.tools.slack_publish import (
+    confirm_slack_publish,
+    publish_standup_to_slack,
+)
+from github_standup_agent.tools.slack_standups import get_team_slack_standups
 
 __all__ = [
     "get_my_prs",
@@ -22,4 +27,8 @@ __all__ = [
     "get_recent_standups",
     "save_standup",
     "save_standup_to_file",
+    # Slack tools
+    "get_team_slack_standups",
+    "publish_standup_to_slack",
+    "confirm_slack_publish",
 ]

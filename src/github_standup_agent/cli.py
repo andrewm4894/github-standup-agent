@@ -274,6 +274,10 @@ def config(
         bool,
         typer.Option("--edit-examples", help="Open examples.md in your default editor."),
     ] = False,
+    set_slack_channel: Annotated[
+        str | None,
+        typer.Option("--set-slack-channel", help="Set Slack channel for standups."),
+    ] = None,
 ) -> None:
     """Manage standup-agent configuration."""
     cfg = StandupConfig.load()
@@ -303,6 +307,13 @@ def config(
         cfg.save()
         console.print("[green]Style instructions set.[/green]")
         console.print("[dim]For detailed customization, use --init-style to create style.md[/dim]")
+        return
+
+    if set_slack_channel:
+        cfg.slack_channel = set_slack_channel
+        cfg.save()
+        console.print(f"[green]Slack channel set to: {set_slack_channel}[/green]")
+        console.print("[dim]Don't forget to set STANDUP_SLACK_BOT_TOKEN env var.[/dim]")
         return
 
     if init_style:
@@ -371,10 +382,19 @@ def config(
             console.print(f"[yellow]Could not find editor. Edit manually:[/yellow] {EXAMPLES_FILE}")
         return
 
-    if show or not any([
-        set_openai_key, set_github_user, set_model, set_style,
-        init_style, edit_style, init_examples, edit_examples,
-    ]):
+    if show or not any(
+        [
+            set_openai_key,
+            set_github_user,
+            set_model,
+            set_style,
+            init_style,
+            edit_style,
+            init_examples,
+            edit_examples,
+            set_slack_channel,
+        ]
+    ):
         detected_user = get_github_username()
         api_key_status = "Set" if cfg.openai_api_key else "Not set (check env)"
 
@@ -398,6 +418,14 @@ def config(
         else:
             examples_status = "[dim]None (use --init-examples to add)[/dim]"
 
+        # Slack status
+        slack_token_status = "[green]Set[/green]" if cfg.get_slack_token() else "[dim]Not set[/dim]"
+        slack_channel_status = (
+            f"[green]{cfg.slack_channel}[/green]"
+            if cfg.slack_channel
+            else "[dim]Not configured[/dim]"
+        )
+
         username = cfg.github_username or detected_user or "Not set"
         console.print(
             Panel(
@@ -409,7 +437,9 @@ def config(
                 f"[bold]Summarizer Model:[/bold] {cfg.summarizer_model}\n"
                 f"[bold]Temperature:[/bold] {cfg.temperature}\n"
                 f"[bold]Style:[/bold] {style_status}\n"
-                f"[bold]Examples:[/bold] {examples_status}",
+                f"[bold]Examples:[/bold] {examples_status}\n"
+                f"[bold]Slack Token:[/bold] {slack_token_status}\n"
+                f"[bold]Slack Channel:[/bold] {slack_channel_status}",
                 title="Configuration",
                 border_style="cyan",
             )

@@ -10,11 +10,15 @@ from github_standup_agent.tools.history import (
     save_standup,
     save_standup_to_file,
 )
+from github_standup_agent.tools.slack_publish import (
+    confirm_slack_publish,
+    publish_standup_to_slack,
+)
 
 COORDINATOR_INSTRUCTIONS = """You coordinate standup generation.
 
 IMPORTANT: You NEVER write standup summaries yourself. You MUST use the tools:
-- Use gather_github_data tool to collect GitHub activity
+- Use gather_github_data tool to collect GitHub activity (also fetches Slack standups if configured)
 - Use create_standup_summary tool to generate the standup (it has the user's style)
 
 Workflow:
@@ -24,6 +28,11 @@ Workflow:
 
 For "copy to clipboard" or "save" requests: use those tools directly.
 For refinement requests: call create_standup_summary again with the feedback.
+
+For "publish to slack" requests:
+1. First call publish_standup_to_slack WITHOUT confirmed=True - this shows a preview
+2. Wait for user to confirm with words like "yes", "confirm", "publish it"
+3. Call confirm_slack_publish, then call publish_standup_to_slack with confirmed=True
 """
 
 
@@ -70,6 +79,9 @@ def create_coordinator_agent(
             get_recent_standups,
             save_standup,
             save_standup_to_file,
+            # Slack tools
+            publish_standup_to_slack,
+            confirm_slack_publish,
         ],
         model=model,
         model_settings=ModelSettings(

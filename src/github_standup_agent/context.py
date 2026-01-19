@@ -38,3 +38,11 @@ class StandupContext:
 
     # Custom style instructions (loaded from config and/or style.md file)
     style_instructions: str | None = None
+
+    # Slack data (populated by tools)
+    collected_slack_standups: list[dict[str, Any]] = field(default_factory=list)
+    slack_thread_ts: str | None = None  # Thread timestamp for posting replies
+    slack_channel_id: str | None = None  # Resolved channel ID
+
+    # Confirmation tracking for publish safety
+    slack_publish_confirmed: bool = False

@@ -33,6 +33,13 @@ class StandupConfig(BaseSettings):
     # GitHub settings
     github_username: str | None = None  # Auto-detected from `gh auth status` if not set
 
+    # Slack settings
+    slack_bot_token: SecretStr | None = Field(
+        default=None,
+        validation_alias="STANDUP_SLACK_BOT_TOKEN",
+    )
+    slack_channel: str | None = None  # Channel name (without #) or channel ID
+
     # Agent settings
     default_days_back: int = 1
     default_output: str = "stdout"  # stdout, clipboard
@@ -54,8 +61,10 @@ class StandupConfig(BaseSettings):
     def save(self) -> None:
         """Save configuration to file."""
         CONFIG_DIR.mkdir(parents=True, exist_ok=True)
-        # Don't save the API key to file for security
-        CONFIG_FILE.write_text(self.model_dump_json(indent=2, exclude={"openai_api_key"}))
+        # Don't save secrets to file for security
+        CONFIG_FILE.write_text(
+            self.model_dump_json(indent=2, exclude={"openai_api_key", "slack_bot_token"})
+        )
 
     @classmethod
     def load(cls) -> "StandupConfig":
@@ -77,6 +86,17 @@ class StandupConfig(BaseSettings):
                 "or use `standup config --set-openai-key`"
             )
         return self.openai_api_key.get_secret_value()
+
+    def get_slack_token(self) -> str | None:
+        """Get the Slack bot token, returning None if not set."""
+        if self.slack_bot_token is None:
+            # Check environment directly as fallback
+            return os.getenv("STANDUP_SLACK_BOT_TOKEN")
+        return self.slack_bot_token.get_secret_value()
+
+    def is_slack_enabled(self) -> bool:
+        """Check if Slack integration is properly configured."""
+        return bool(self.get_slack_token() and self.slack_channel)
 
 
 def get_github_username() -> str | None:
@@ -162,9 +182,7 @@ def get_combined_style_instructions(config: StandupConfig) -> str | None:
     examples, _ = load_examples_from_file()
     if examples:
         examples_section = (
-            "## Example Standups\n\n"
-            "Use these as reference for tone and format:\n\n"
-            f"{examples}"
+            f"## Example Standups\n\nUse these as reference for tone and format:\n\n{examples}"
         )
         parts.append(examples_section)
 

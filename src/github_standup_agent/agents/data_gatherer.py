@@ -8,6 +8,7 @@ from github_standup_agent.tools.github_commits import get_my_commits
 from github_standup_agent.tools.github_issues import get_my_issues
 from github_standup_agent.tools.github_prs import get_my_prs
 from github_standup_agent.tools.github_reviews import get_my_reviews
+from github_standup_agent.tools.slack_standups import get_team_slack_standups
 
 DATA_GATHERER_INSTRUCTIONS = """You are a GitHub data gathering specialist. Your job is to collect
 comprehensive information about a user's GitHub activity.
@@ -18,6 +19,7 @@ When asked to gather data, use ALL available tools to collect:
 3. Recent commits
 4. Code review activity
 5. Overall activity summary
+6. Team standups from Slack (if configured)
 
 Be thorough - gather everything that might be relevant for a standup summary.
 After gathering data, provide a brief summary of what you found.
@@ -41,6 +43,7 @@ def create_data_gatherer_agent(
             get_my_commits,
             get_my_reviews,
             get_activity_summary,
+            get_team_slack_standups,
         ],
         model=model,
         model_settings=ModelSettings(
