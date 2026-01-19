@@ -10,6 +10,7 @@ from github_standup_agent.tools.history import (
     save_standup,
     save_standup_to_file,
 )
+from github_standup_agent.tools.slack import post_standup_to_slack
 
 COORDINATOR_INSTRUCTIONS = """You coordinate standup generation.
 
@@ -23,6 +24,7 @@ Workflow:
 3. Return the summary to the user
 
 For "copy to clipboard" or "save" requests: use those tools directly.
+For "post to slack" requests: use the post_standup_to_slack tool.
 For refinement requests: call create_standup_summary again with the feedback.
 """
 
@@ -70,6 +72,7 @@ def create_coordinator_agent(
             get_recent_standups,
             save_standup,
             save_standup_to_file,
+            post_standup_to_slack,
         ],
         model=model,
         model_settings=ModelSettings(

@@ -6,7 +6,6 @@ from github_standup_agent.context import StandupContext
 from github_standup_agent.tools.clipboard import copy_to_clipboard
 from github_standup_agent.tools.history import get_recent_standups, save_standup
 
-
 SUMMARIZER_INSTRUCTIONS = """You are a standup summary specialist.
 Create daily standup summaries from GitHub activity data.
 

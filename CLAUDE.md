@@ -207,3 +207,52 @@ When PostHog is enabled, the following custom events are emitted:
 - `standup_saved` - Emitted when the agent explicitly calls the `save_standup` tool
 
 Event properties include: `summary`, `github_username`, `days_back`, `date`, `summary_length`, `has_prs`, `has_issues`, `has_commits`, `has_reviews`
+
+## Slack Integration (optional)
+
+Post standups directly to Slack channels or threads.
+
+### Setup
+
+1. Create a Slack app at https://api.slack.com/apps
+2. Add the following OAuth scopes under "OAuth & Permissions":
+   - `chat:write` - Post messages
+   - `channels:history` - Find existing standup threads (optional, for auto-thread feature)
+3. Install the app to your workspace
+4. Copy the "Bot User OAuth Token" (starts with `xoxb-`)
+
+### Configuration
+
+Set environment variables:
+- `STANDUP_SLACK_BOT_TOKEN` - Your Slack Bot OAuth token (required for Slack)
+- `STANDUP_SLACK_CHANNEL` - Default channel ID to post to (e.g., `C01234567`)
+
+Install the Slack SDK:
+```bash
+uv pip install slack-sdk
+# Or with the slack extra:
+uv pip install github-standup-agent[slack]
+```
+
+### Usage
+
+In chat mode, ask the agent to post to Slack:
+```
+> post my standup to slack
+```
+
+The tool will automatically try to find the latest standup thread in the channel (within the last 7 days) and post as a reply. If no thread is found, it posts as a new message.
+
+### Finding Your Channel ID
+
+Channel IDs are different from channel names. To find your channel ID:
+1. Open Slack in a browser
+2. Navigate to the channel
+3. The URL will be like `https://app.slack.com/client/T.../C01234567`
+4. The `C01234567` part is your channel ID
+
+### Troubleshooting
+
+- **"Bot is not in channel"**: Invite the bot to the channel with `/invite @your-bot-name`
+- **"Channel not found"**: Make sure you're using the channel ID (e.g., `C01234567`), not the channel name
+- **"Invalid auth"**: Check your `STANDUP_SLACK_BOT_TOKEN` is correct and the app is installed
