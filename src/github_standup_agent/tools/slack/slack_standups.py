@@ -14,6 +14,9 @@ from github_standup_agent.tools.slack.slack_client import (
     resolve_channel_id,
 )
 
+# Extra days of Slack context beyond the requested window
+SLACK_CONTEXT_EXTRA_DAYS = 3
+
 
 @function_tool
 def get_team_slack_standups(
@@ -25,6 +28,8 @@ def get_team_slack_standups(
 
     Looks for threads that start with "Standup" and collects replies from team members.
     This provides context about what the team is working on.
+
+    Note: Automatically adds extra days of context for background.
     """
     config = ctx.context.config
 
@@ -49,8 +54,9 @@ def get_team_slack_standups(
         # Get recent messages
         messages = get_channel_messages(client, channel_id, limit=100)
 
-        # Calculate cutoff timestamp
-        cutoff = datetime.now() - timedelta(days=days_back)
+        # Calculate cutoff timestamp (add extra days for background context)
+        total_days = days_back + SLACK_CONTEXT_EXTRA_DAYS
+        cutoff = datetime.now() - timedelta(days=total_days)
         cutoff_ts = cutoff.timestamp()
 
         # Find standup threads
@@ -105,7 +111,7 @@ def get_team_slack_standups(
         if not standup_threads:
             return (
                 f"No standup threads found in #{config.slack_channel} "
-                f"in the last {days_back} day(s)."
+                f"in the last {total_days} day(s)."
             )
 
         # Format output for the agent
