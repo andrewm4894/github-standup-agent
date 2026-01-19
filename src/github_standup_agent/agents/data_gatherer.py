@@ -9,6 +9,7 @@ from github_standup_agent.tools.github import (
     get_activity_summary,
     get_issue_details,
     get_pr_details,
+    list_assigned_items,
     list_commits,
     list_issues,
     list_prs,
@@ -32,11 +33,14 @@ Overview tools:
 - get_activity_feed: Complete chronological feed of all GitHub activity (START HERE)
 - get_activity_summary: Aggregate contribution statistics
 
-List tools (flexible filtering):
+List tools (with date filters):
 - list_prs: PRs with filter_by options: authored, reviewed, assigned, involves, review-requested
 - list_issues: Issues with filter_by options: authored, assigned, mentions, involves
 - list_commits: Commits with optional repo filter
 - list_reviews: Code reviews given or received, with actual states (APPROVED, etc.)
+
+Assigned items (NO date filter - shows all open assignments):
+- list_assigned_items: All open issues/PRs assigned to user, regardless of activity
 
 Detail tools (drill-down for full context):
 - get_pr_details: Full PR context - body, review decision, linked issues, CI status, labels
@@ -50,6 +54,7 @@ Use get_activity_feed() first for the overview, then:
 - If a PR looks significant, use get_pr_details(repo, number) for full context
 - If an issue needs more context, use get_issue_details(repo, number)
 - For reviews you gave on others' PRs, use list_reviews(filter_by="given")
+- For all open assignments (regardless of activity), use list_assigned_items
 
 Be thorough - gather everything that might be relevant for a standup summary.
 After gathering data, provide a brief summary of what you found.
@@ -71,11 +76,13 @@ def create_data_gatherer_agent(
             # Overview tools
             get_activity_feed,
             get_activity_summary,
-            # List tools
+            # List tools (with date filters)
             list_prs,
             list_issues,
             list_commits,
             list_reviews,
+            # Assigned items (no date filter)
+            list_assigned_items,
             # Detail tools
             get_pr_details,
             get_issue_details,

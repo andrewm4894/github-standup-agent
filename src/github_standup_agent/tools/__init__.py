@@ -6,6 +6,7 @@ from github_standup_agent.tools.github import (
     get_activity_summary,
     get_issue_details,
     get_pr_details,
+    list_assigned_items,
     list_commits,
     list_issues,
     list_prs,
@@ -26,11 +27,13 @@ __all__ = [
     # GitHub tools - overview
     "get_activity_feed",
     "get_activity_summary",
-    # GitHub tools - list
+    # GitHub tools - list (with date filters)
     "list_prs",
     "list_issues",
     "list_commits",
     "list_reviews",
+    # GitHub tools - assigned (no date filter)
+    "list_assigned_items",
     # GitHub tools - details
     "get_pr_details",
     "get_issue_details",
