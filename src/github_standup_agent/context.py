@@ -46,3 +46,6 @@ class StandupContext:
 
     # Confirmation tracking for publish safety
     slack_publish_confirmed: bool = False
+
+    # Standup content staged for Slack publish (preserved during confirmation flow)
+    slack_standup_to_publish: str | None = None

@@ -53,6 +53,9 @@ def publish_standup_to_slack(
 
     # SAFETY CHECK: Require explicit confirmation
     if not confirmed and not ctx.context.slack_publish_confirmed:
+        # Stage the content for publishing (preserves it during confirmation flow)
+        ctx.context.slack_standup_to_publish = content
+
         # Return a preview for confirmation
         preview_lines = [
             "**Ready to publish to Slack:**\n",
@@ -63,6 +66,9 @@ def publish_standup_to_slack(
             "\n\n**To confirm, say 'yes, publish to slack' or 'confirm publish'**",
         ]
         return "\n".join(preview_lines)
+
+    # Use staged content if available (from preview step), otherwise fall back to current
+    content = ctx.context.slack_standup_to_publish or content
 
     try:
         client = get_slack_client(token)
@@ -76,8 +82,9 @@ def publish_standup_to_slack(
         # Post to thread
         post_to_thread(client, channel_id, thread_ts, content)
 
-        # Reset confirmation flag
+        # Reset confirmation flag and staged content
         ctx.context.slack_publish_confirmed = False
+        ctx.context.slack_standup_to_publish = None
 
         return f"Posted standup to Slack in #{config.slack_channel} (thread: {thread_ts})"
 
