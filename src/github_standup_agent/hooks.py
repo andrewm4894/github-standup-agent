@@ -1,10 +1,12 @@
 """Hooks for logging and observability."""
 
+import json
 import time
 from typing import Any
 
 from agents import Agent, AgentHooks, RunContextWrapper, RunHooks, Tool
 from agents.run_context import AgentHookContext
+from agents.tool_context import ToolContext
 from rich.console import Console
 
 from github_standup_agent.context import StandupContext
@@ -84,7 +86,17 @@ class StandupAgentHooks(AgentHooks[StandupContext]):
     ) -> None:
         """Called when a tool is about to be invoked."""
         if self.verbose:
-            console.print(f"[dim]  Tool: {tool.name}...[/dim]")
+            # Try to get tool arguments if context is a ToolContext
+            args_str = ""
+            if isinstance(context, ToolContext) and context.tool_arguments:
+                try:
+                    args = json.loads(context.tool_arguments)
+                    # Format args as key=value pairs
+                    args_parts = [f"{k}={repr(v)}" for k, v in args.items()]
+                    args_str = f"({', '.join(args_parts)})"
+                except (json.JSONDecodeError, AttributeError):
+                    args_str = f"({context.tool_arguments})"
+            console.print(f"[dim]  Tool: {tool.name}{args_str}...[/dim]")
 
     async def on_tool_end(
         self,
