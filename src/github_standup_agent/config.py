@@ -8,6 +8,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Config directory
 CONFIG_DIR = Path.home() / ".config" / "standup-agent"
+
+# Default model for all agents
+DEFAULT_MODEL = "gpt-5.2"
 CONFIG_FILE = CONFIG_DIR / "config.json"
 DB_FILE = CONFIG_DIR / "standup_history.db"
 STYLE_FILE = CONFIG_DIR / "style.md"
@@ -43,9 +46,9 @@ class StandupConfig(BaseSettings):
     # Agent settings
     default_days_back: int = 1
     default_output: str = "stdout"  # stdout, clipboard
-    coordinator_model: str = "gpt-5.2"
-    data_gatherer_model: str = "gpt-5.2"
-    summarizer_model: str = "gpt-5.2"
+    coordinator_model: str = DEFAULT_MODEL
+    data_gatherer_model: str = DEFAULT_MODEL
+    summarizer_model: str = DEFAULT_MODEL
     temperature: float = 0.7
 
     # Repos to include/exclude (empty = all)

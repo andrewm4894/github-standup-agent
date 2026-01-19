@@ -2,6 +2,7 @@
 
 from agents import Agent, AgentHooks, ModelSettings
 
+from github_standup_agent.config import DEFAULT_MODEL
 from github_standup_agent.context import StandupContext
 from github_standup_agent.tools.github_activity import get_activity_summary
 from github_standup_agent.tools.github_commits import get_my_commits
@@ -29,7 +30,7 @@ Important: Use the context's days_back value to determine the time range for dat
 
 
 def create_data_gatherer_agent(
-    model: str = "gpt-4o-mini",
+    model: str = DEFAULT_MODEL,
     hooks: AgentHooks[StandupContext] | None = None,
 ) -> Agent[StandupContext]:
     """Create the data gatherer agent with all GitHub tools."""

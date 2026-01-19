@@ -230,7 +230,7 @@ standup config --show
 standup config --set-github-user myusername
 
 # Set model for summarization
-standup config --set-model gpt-4o
+standup config --set-model gpt-5.2
 ```
 
 ## Configuration Options
@@ -239,9 +239,9 @@ standup config --set-model gpt-4o
 |---------------------|-------------|---------|
 | `OPENAI_API_KEY` | OpenAI API key (required) | - |
 | `STANDUP_GITHUB_USER` | GitHub username | Auto-detected |
-| `STANDUP_COORDINATOR_MODEL` | Model for coordinator agent | gpt-4o |
-| `STANDUP_DATA_GATHERER_MODEL` | Model for data gathering | gpt-4o-mini |
-| `STANDUP_SUMMARIZER_MODEL` | Model for summarization | gpt-4o |
+| `STANDUP_COORDINATOR_MODEL` | Model for coordinator agent | gpt-5.2 |
+| `STANDUP_DATA_GATHERER_MODEL` | Model for data gathering | gpt-5.2 |
+| `STANDUP_SUMMARIZER_MODEL` | Model for summarization | gpt-5.2 |
 | `STANDUP_SLACK_BOT_TOKEN` | Slack bot token for integration | - |
 | `STANDUP_SLACK_CHANNEL` | Default Slack channel (or use config) | - |
 
@@ -279,7 +279,7 @@ mypy src/
      ▼               ▼
 ┌──────────────┐ ┌──────────────┐
 │ Data Gatherer│ │  Summarizer  │
-│ (gpt-4o-mini)│ │   (gpt-4o)   │
+│  (gpt-5.2)   │ │  (gpt-5.2)   │
 └──────────────┘ └──────────────┘
        │                │
        ▼                ▼

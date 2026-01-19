@@ -2,6 +2,7 @@
 
 from agents import Agent, AgentHooks, ModelSettings
 
+from github_standup_agent.config import DEFAULT_MODEL
 from github_standup_agent.context import StandupContext
 from github_standup_agent.tools.clipboard import copy_to_clipboard
 from github_standup_agent.tools.history import get_recent_standups, save_standup
@@ -38,7 +39,7 @@ Do NOT use generic standup formats. Copy the style from the examples precisely.
 
 
 def create_summarizer_agent(
-    model: str = "gpt-4o",
+    model: str = DEFAULT_MODEL,
     hooks: AgentHooks[StandupContext] | None = None,
     style_instructions: str | None = None,
 ) -> Agent[StandupContext]:
@@ -78,7 +79,7 @@ summarizer_agent = Agent[StandupContext](
         save_standup,
         copy_to_clipboard,
     ],
-    model="gpt-4o",
+    model=DEFAULT_MODEL,
     model_settings=ModelSettings(
         temperature=0.7,
     ),

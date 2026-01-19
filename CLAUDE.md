@@ -25,13 +25,13 @@ This is a multi-agent system built with the OpenAI Agents SDK (`openai-agents`) 
 ### Agent Flow
 
 ```
-Coordinator Agent (gpt-4o)
+Coordinator Agent (gpt-5.2)
     │
-    ├── handoff to → Data Gatherer Agent (gpt-4o-mini)
+    ├── handoff to → Data Gatherer Agent (gpt-5.2)
     │                   └── uses gh CLI tools to collect PRs, issues, commits, reviews
     │                   └── optionally fetches team standups from Slack
     │
-    └── handoff to → Summarizer Agent (gpt-4o)
+    └── handoff to → Summarizer Agent (gpt-5.2)
                         └── creates formatted standup, can save/copy/publish to Slack
 ```
 

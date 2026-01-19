@@ -3,6 +3,7 @@
 from agents import Agent, AgentHooks, ModelSettings
 
 from github_standup_agent.agents.summarizer import create_summarizer_agent
+from github_standup_agent.config import DEFAULT_MODEL
 from github_standup_agent.context import StandupContext
 from github_standup_agent.tools.clipboard import copy_to_clipboard
 from github_standup_agent.tools.history import (
@@ -37,9 +38,9 @@ For "publish to slack" requests:
 
 
 def create_coordinator_agent(
-    model: str = "gpt-4o",
-    data_gatherer_model: str = "gpt-4o-mini",
-    summarizer_model: str = "gpt-4o",
+    model: str = DEFAULT_MODEL,
+    data_gatherer_model: str = DEFAULT_MODEL,
+    summarizer_model: str = DEFAULT_MODEL,
     hooks: AgentHooks[StandupContext] | None = None,
     style_instructions: str | None = None,
 ) -> Agent[StandupContext]:
