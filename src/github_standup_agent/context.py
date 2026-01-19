@@ -26,6 +26,12 @@ class StandupContext:
     collected_issues: list[dict[str, Any]] = field(default_factory=list)
     collected_commits: list[dict[str, Any]] = field(default_factory=list)
     collected_reviews: list[dict[str, Any]] = field(default_factory=list)
+    collected_activity_feed: list[dict[str, Any]] = field(default_factory=list)
+
+    # Detail caches (populated by get_pr_details, get_issue_details)
+    # Keys are "repo#number" format, e.g., "owner/repo#123"
+    pr_details_cache: dict[str, dict[str, Any]] = field(default_factory=dict)
+    issue_details_cache: dict[str, dict[str, Any]] = field(default_factory=dict)
 
     # Historical context
     recent_standups: list[dict[str, Any]] = field(default_factory=list)

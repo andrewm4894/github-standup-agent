@@ -110,9 +110,7 @@ def get_thread_replies(
             channel=channel_id,
             ts=thread_ts,
         )
-        messages: list[dict[str, Any]] = cast(
-            list[dict[str, Any]], result.get("messages", [])
-        )
+        messages: list[dict[str, Any]] = cast(list[dict[str, Any]], result.get("messages", []))
         # First message is the parent, skip it
         return messages[1:] if len(messages) > 1 else []
     except SlackApiError as e:

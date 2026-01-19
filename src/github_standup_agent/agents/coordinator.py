@@ -11,7 +11,7 @@ from github_standup_agent.tools.history import (
     save_standup,
     save_standup_to_file,
 )
-from github_standup_agent.tools.slack_publish import (
+from github_standup_agent.tools.slack import (
     confirm_slack_publish,
     publish_standup_to_slack,
 )
@@ -73,7 +73,7 @@ def create_coordinator_agent(
             ),
             summarizer.as_tool(
                 tool_name="create_standup_summary",
-                tool_description="Create a standup summary from GitHub data. Has user's style preferences.",
+                tool_description="Create a standup summary from GitHub data with style prefs.",
             ),
             # Direct tools
             copy_to_clipboard,

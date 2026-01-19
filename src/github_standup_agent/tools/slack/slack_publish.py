@@ -5,7 +5,7 @@ from typing import Annotated
 from agents import RunContextWrapper, function_tool
 
 from github_standup_agent.context import StandupContext
-from github_standup_agent.tools.slack_client import (
+from github_standup_agent.tools.slack.slack_client import (
     SlackClientError,
     get_slack_client,
     post_to_thread,
