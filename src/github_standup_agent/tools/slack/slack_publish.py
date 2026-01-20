@@ -79,8 +79,13 @@ def publish_standup_to_slack(
             channel_id = resolve_channel_id(client, config.slack_channel)
             ctx.context.slack_channel_id = channel_id
 
+        # Build display name from github username (requires chat:write.customize scope)
+        display_name = None
+        if ctx.context.github_username:
+            display_name = f"{ctx.context.github_username}'s standup"
+
         # Post to thread
-        post_to_thread(client, channel_id, thread_ts, content)
+        post_to_thread(client, channel_id, thread_ts, content, username=display_name)
 
         # Reset confirmation flag and staged content
         ctx.context.slack_publish_confirmed = False

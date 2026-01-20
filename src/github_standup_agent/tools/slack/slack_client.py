@@ -122,6 +122,7 @@ def post_to_thread(
     channel_id: str,
     thread_ts: str,
     text: str,
+    username: str | None = None,
 ) -> dict[str, Any]:
     """Post a message as a reply in a thread.
 
@@ -130,16 +131,21 @@ def post_to_thread(
         channel_id: Channel ID
         thread_ts: Thread parent timestamp
         text: Message text
+        username: Optional custom display name (requires chat:write.customize scope)
 
     Returns:
         API response
     """
     try:
-        result = client.chat_postMessage(
-            channel=channel_id,
-            thread_ts=thread_ts,
-            text=text,
-        )
+        kwargs: dict[str, Any] = {
+            "channel": channel_id,
+            "thread_ts": thread_ts,
+            "text": text,
+        }
+        if username:
+            kwargs["username"] = username
+
+        result = client.chat_postMessage(**kwargs)
         return {"ok": result["ok"], "ts": result["ts"], "channel": result["channel"]}
     except SlackApiError as e:
         raise SlackClientError(f"Slack API error: {e.response['error']}") from e
