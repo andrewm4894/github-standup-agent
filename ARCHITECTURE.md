@@ -88,7 +88,7 @@ flowchart LR
     subgraph DataGatherer["Data Gatherer Agent (as tool)"]
         direction TB
         dg_inst["Instructions"]
-        dg_tools["Tools:<br/>- get_activity_feed<br/>- list_prs<br/>- list_issues<br/>- list_commits<br/>- list_reviews<br/>- get_pr_details<br/>- get_issue_details<br/>- get_team_slack_standups"]
+        dg_tools["Tools:<br/>- get_activity_feed<br/>- list_prs<br/>- list_issues<br/>- list_commits<br/>- list_reviews<br/>- list_assigned_items<br/>- get_pr_details<br/>- get_issue_details<br/>- get_team_slack_standups"]
     end
 
     subgraph Summarizer["Summarizer Agent (as tool)"]
@@ -253,17 +253,16 @@ classDiagram
 
 ```mermaid
 flowchart TB
-    subgraph ConfigDir["~/.config/standup-agent/"]
+    subgraph ConfigDir["./config/"]
         config_json["config.json<br/><i>User preferences</i>"]
         style_md["style.md<br/><i>Detailed formatting rules</i>"]
         examples_md["examples.md<br/><i>Few-shot examples</i>"]
-        history_db["standup_history.db<br/><i>Generated standups + raw data</i>"]
-        sessions_db["chat_sessions.db<br/><i>Conversation history</i>"]
+        config_example["*.example.*<br/><i>Templates (committed)</i>"]
     end
 
-    subgraph LocalDir["./  (optional)"]
-        local_style["style.md<br/><i>Project-specific style</i>"]
-        local_examples["examples.md<br/><i>Project-specific examples</i>"]
+    subgraph DataDir["./.standup-data/"]
+        history_db["standup_history.db<br/><i>Generated standups + raw data</i>"]
+        sessions_db["chat_sessions.db<br/><i>Conversation history</i>"]
     end
 
     subgraph Runtime["Runtime"]
@@ -305,6 +304,7 @@ Tools are organized in `tools/github/` with a two-tier pattern: overview/list to
 | `list_issues` | `tools/github/github_issues.py` | Search issues with flexible filters |
 | `list_commits` | `tools/github/github_commits.py` | Search commits by user |
 | `list_reviews` | `tools/github/github_reviews.py` | Fetch reviews given or received with actual states |
+| `list_assigned_items` | `tools/github/github_assigned.py` | All open issues/PRs assigned to user (no date filter) |
 | `get_pr_details` | `tools/github/github_prs.py` | Full PR context (body, reviews, CI, linked issues) |
 | `get_issue_details` | `tools/github/github_issues.py` | Full issue context (body, linked PRs, labels) |
 
@@ -345,21 +345,30 @@ The system includes input/output guardrails for validation:
 
 ## Configuration Hierarchy
 
-Style and examples are loaded with the following priority:
+Configuration priority (highest to lowest):
 
 ```mermaid
 flowchart TB
-    subgraph Priority["Load Order (highest to lowest)"]
-        local_style["./style.md"] --> global_style["~/.config/standup-agent/style.md"]
-        local_examples["./examples.md"] --> global_examples["~/.config/standup-agent/examples.md"]
+    subgraph Priority["Load Order (highest wins)"]
+        env[".env / Environment Variables"] --> config["config/config.json"]
+        config --> defaults["Default Values"]
+    end
+
+    subgraph StyleLoading["Style Sources (all combined)"]
+        style["config/style.md"]
+        examples["config/examples.md"]
         config_style["config.json: style_instructions"]
     end
 
-    global_style --> combined["get_combined_style_instructions()"]
-    global_examples --> combined
+    style --> combined["get_combined_style_instructions()"]
+    examples --> combined
     config_style --> combined
     combined --> summarizer["Summarizer Agent Prompt"]
 ```
+
+Directories can be customized via environment variables:
+- `STANDUP_CONFIG_DIR` - config files (default: `./config/`)
+- `STANDUP_DATA_DIR` - databases (default: `./.standup-data/`)
 
 ## Observability
 
@@ -403,6 +412,7 @@ src/github_standup_agent/
 │   ├── feedback.py        # Feedback capture tools
 │   ├── github/            # GitHub CLI wrappers
 │   │   ├── github_activity.py   # get_activity_summary
+│   │   ├── github_assigned.py   # list_assigned_items
 │   │   ├── github_events.py     # get_activity_feed
 │   │   ├── github_prs.py        # list_prs, get_pr_details
 │   │   ├── github_issues.py     # list_issues, get_issue_details

@@ -54,13 +54,14 @@ dmypy.json
 .DS_Store
 Thumbs.db
 
-# Project specific
+# Project specific - runtime data
 .standup-data/
-.config/
 
-# Personal style configuration (use *.example.md as templates)
-style.md
-examples.md
+# Personal config in config/ (templates like *.example.* are committed)
+config/config.json
+config/style.md
+config/examples.md
+!config/*.example.*
 
 # Generated standup file
 standup.md

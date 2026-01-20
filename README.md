@@ -184,9 +184,9 @@ standup config --init-examples
 standup config --edit-examples
 ```
 
-See `style.example.md` and `examples.example.md` for templates.
+See `config/style.example.md` and `config/examples.example.md` for templates.
 
-**File locations:** The CLI checks the current directory first, then `~/.config/standup-agent/`. This lets you keep project-specific styles in your repo (gitignored).
+**File locations:** Config files live in `./config/` by default (customizable via `STANDUP_CONFIG_DIR`). Personal config files are gitignored while templates (`*.example.*`) are committed.
 
 ### Slack Integration
 
@@ -244,8 +244,12 @@ standup config --set-model gpt-5.2
 | `STANDUP_SUMMARIZER_MODEL` | Model for summarization | gpt-5.2 |
 | `STANDUP_SLACK_BOT_TOKEN` | Slack bot token for integration | - |
 | `STANDUP_SLACK_CHANNEL` | Default Slack channel (or use config) | - |
+| `STANDUP_CONFIG_DIR` | Config directory location | `./config/` |
+| `STANDUP_DATA_DIR` | Data directory location | `./.standup-data/` |
 
-Config file location: `~/.config/standup-agent/config.json`
+**Priority:** `.env` > `config/config.json` > defaults
+
+Config file: `./config/config.json` (see `config/config.example.json` for template)
 
 ## Development
 

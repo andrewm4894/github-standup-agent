@@ -46,7 +46,7 @@ Coordinator Agent (gpt-5.2)
 - **`tools/`**: Function tools decorated with `@function_tool` that wrap `gh` CLI and Slack API calls
 - **`guardrails/`**: Input/output validation (e.g., `validate_days_guardrail` limits lookback range)
 - **`hooks.py`**: `RunHooks` and `AgentHooks` for logging/observability
-- **`db.py`**: SQLite persistence for standup history at `~/.config/standup-agent/standups.db`
+- **`db.py`**: SQLite persistence for standup history at `.standup-data/standup_history.db`
 
 ### Tool Pattern
 
@@ -79,6 +79,9 @@ Tools are organized in `tools/github/` with a two-tier pattern:
 - `list_commits` - Search commits by user
 - `list_reviews` - Fetch reviews given or received with actual states (APPROVED, CHANGES_REQUESTED, etc.)
 
+**Assigned Items** (no date filter):
+- `list_assigned_items` - All open issues/PRs assigned to user, regardless of activity date
+
 **Detail Tools** (for drill-down):
 - `get_pr_details(repo, number)` - Full PR context (body, reviews, CI status, linked issues)
 - `get_issue_details(repo, number)` - Full issue context (body, linked PRs, labels)
@@ -96,14 +99,16 @@ Verbose mode (on by default) shows agent activity: tool calls, handoffs, timing.
 
 ## Configuration
 
-Environment variables:
+Environment variables (`.env` takes priority over config file):
 - `OPENAI_API_KEY` (required)
 - `STANDUP_GITHUB_USER` - override auto-detected username
 - `STANDUP_COORDINATOR_MODEL`, `STANDUP_DATA_GATHERER_MODEL`, `STANDUP_SUMMARIZER_MODEL`
 - `STANDUP_SLACK_BOT_TOKEN` - Slack bot token for reading/publishing standups
 - `STANDUP_SLACK_CHANNEL` - default Slack channel (can also set via CLI)
+- `STANDUP_CONFIG_DIR` - config directory (default: `./config/`)
+- `STANDUP_DATA_DIR` - data directory (default: `./.standup-data/`)
 
-Config file: `~/.config/standup-agent/config.json`
+Config file: `./config/config.json` (see `config/config.example.json` for template)
 
 ## Style Customization
 
@@ -120,7 +125,7 @@ standup config --set-style "Be very concise. Use bullet points only. Skip blocke
 
 For more detailed customization, create and edit a style file:
 ```bash
-standup config --init-style    # Creates ~/.config/standup-agent/style.md
+standup config --init-style    # Creates config/style.md from config/style.example.md
 standup config --edit-style    # Opens the file in your editor
 ```
 
@@ -143,7 +148,7 @@ Example `style.md` content:
 Provide real examples of standups you like. This is "few-shot prompting" - the AI will match the tone, format, and level of detail from your examples.
 
 ```bash
-standup config --init-examples    # Creates ~/.config/standup-agent/examples.md
+standup config --init-examples    # Creates config/examples.md from config/examples.example.md
 standup config --edit-examples    # Opens the file in your editor
 ```
 
@@ -175,7 +180,7 @@ Will Do:
 
 ## Chat Sessions
 
-Chat mode uses the OpenAI Agents SDK's `SQLiteSession` for automatic conversation persistence. Sessions are stored at `~/.config/standup-agent/chat_sessions.db`.
+Chat mode uses the OpenAI Agents SDK's `SQLiteSession` for automatic conversation persistence. Sessions are stored at `.standup-data/chat_sessions.db`.
 
 ### Basic Usage
 

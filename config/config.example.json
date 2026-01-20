@@ -1,0 +1,14 @@
+{
+  "github_username": null,
+  "slack_channel": null,
+  "default_days_back": 1,
+  "default_output": "stdout",
+  "coordinator_model": "gpt-5.2",
+  "data_gatherer_model": "gpt-5.2",
+  "summarizer_model": "gpt-5.2",
+  "temperature": 0.7,
+  "include_repos": [],
+  "exclude_repos": [],
+  "history_days_to_keep": 30,
+  "style_instructions": null
+}
