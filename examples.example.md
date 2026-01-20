@@ -9,6 +9,8 @@ standup config --edit-examples
 
 The AI uses these examples as "few-shot prompts" to match your preferred tone, format, and level of detail.
 
+NOTE: For Slack, use short link labels like `<url|pr>`, `<url|issue>` for readability.
+
 ---
 
 ## Example 1 - Backend Engineer

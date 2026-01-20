@@ -15,10 +15,17 @@ standup config --edit-style
 - No separate "Blockers" section - mention blockers inline if relevant
 - Keep everything as bullet points with `-`
 
+## Slack Formatting (for Slack publishing)
+
+Use Slack mrkdwn format when publishing to Slack:
+- Links: `<https://url|label>` (NOT `[text](url)`)
+- Use SHORT labels for GitHub links: `<url|pr>`, `<url|issue>`, `<url|commit>`
+- NOT repo names or numbers - just `pr` or `issue` for readability
+
 ## Content Style
 
 - Be concise but include enough context for team visibility
-- Reference PRs, threads, tickets with ` - pr`, ` - thread`, ` - ticket` suffixes
+- Reference PRs, threads, tickets with linked labels like `- pr`, `- thread`, `- issue`
 - Include specific project names, tools, and technical details
 - Mention collaboration with team members when relevant
 - Use casual/technical tone - not overly formal
