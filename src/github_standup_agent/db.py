@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-from github_standup_agent.config import CONFIG_DIR, DB_FILE
+from github_standup_agent.config import DATA_DIR, DB_FILE
 
 
 class StandupDatabase:
@@ -18,7 +18,7 @@ class StandupDatabase:
 
     def _ensure_db(self) -> None:
         """Ensure database and tables exist."""
-        CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+        DATA_DIR.mkdir(parents=True, exist_ok=True)
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         cursor.execute("""

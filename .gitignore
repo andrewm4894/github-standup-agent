@@ -55,7 +55,7 @@ dmypy.json
 Thumbs.db
 
 # Project specific
-*.db
+.standup-data/
 .config/
 
 # Personal style configuration (use *.example.md as templates)

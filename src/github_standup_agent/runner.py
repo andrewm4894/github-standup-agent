@@ -11,7 +11,7 @@ from rich.prompt import Prompt
 
 from github_standup_agent.agents.coordinator import create_coordinator_agent
 from github_standup_agent.config import (
-    CONFIG_DIR,
+    DATA_DIR,
     SESSIONS_DB_FILE,
     StandupConfig,
     get_combined_style_instructions,
@@ -25,7 +25,7 @@ console = Console()
 
 def _ensure_sessions_db() -> None:
     """Ensure the sessions database directory exists."""
-    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def get_session_id(name: str | None = None, github_username: str | None = None) -> str:

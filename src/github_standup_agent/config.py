@@ -6,16 +6,21 @@ from pathlib import Path
 from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-# Config directory
+# Config directory (for config.json only)
 CONFIG_DIR = Path.home() / ".config" / "standup-agent"
+CONFIG_FILE = CONFIG_DIR / "config.json"
 
 # Default model for all agents
 DEFAULT_MODEL = "gpt-5.2"
-CONFIG_FILE = CONFIG_DIR / "config.json"
-DB_FILE = CONFIG_DIR / "standup_history.db"
+
+# Data directory (local by default)
+DATA_DIR = Path.cwd() / ".standup-data"
+DB_FILE = DATA_DIR / "standup_history.db"
+SESSIONS_DB_FILE = DATA_DIR / "chat_sessions.db"
+
+# Style/examples files (checked locally first, then global config)
 STYLE_FILE = CONFIG_DIR / "style.md"
 EXAMPLES_FILE = CONFIG_DIR / "examples.md"
-SESSIONS_DB_FILE = CONFIG_DIR / "chat_sessions.db"
 
 
 class StandupConfig(BaseSettings):
