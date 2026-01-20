@@ -1,5 +1,6 @@
 """Tool for publishing standup to Slack."""
 
+import re
 from typing import Annotated
 
 from agents import RunContextWrapper, function_tool
@@ -11,6 +12,31 @@ from github_standup_agent.tools.slack.slack_client import (
     post_to_thread,
     resolve_channel_id,
 )
+
+
+def _parse_slack_thread_url(url: str) -> tuple[str, str] | None:
+    """
+    Parse a Slack thread URL to extract channel ID and thread timestamp.
+
+    URLs look like: https://workspace.slack.com/archives/C123ABC/p1234567890123456
+    The 'p' prefix timestamp needs conversion: p1234567890123456 -> 1234567890.123456
+    """
+    pattern = r"slack\.com/archives/([A-Z0-9]+)/p(\d+)"
+    match = re.search(pattern, url, re.IGNORECASE)
+    if not match:
+        return None
+
+    channel_id = match.group(1)
+    raw_ts = match.group(2)
+
+    # Convert p-format timestamp to Slack's ts format (add decimal point)
+    # p1234567890123456 -> 1234567890.123456
+    if len(raw_ts) > 6:
+        thread_ts = f"{raw_ts[:-6]}.{raw_ts[-6:]}"
+    else:
+        thread_ts = raw_ts
+
+    return channel_id, thread_ts
 
 
 @function_tool
@@ -108,3 +134,43 @@ def confirm_slack_publish(
     """
     ctx.context.slack_publish_confirmed = True
     return "Confirmation received. You can now publish to Slack."
+
+
+@function_tool
+def set_slack_thread(
+    ctx: RunContextWrapper[StandupContext],
+    thread: Annotated[
+        str,
+        "Slack thread URL (e.g., https://workspace.slack.com/archives/C123/p1234567890) "
+        "or thread timestamp (e.g., 1234567890.123456)",
+    ],
+) -> str:
+    """
+    Set a specific Slack thread to post the standup to.
+
+    Use this when the user provides a specific thread URL or timestamp
+    instead of relying on automatic thread discovery.
+    """
+    # Check if it's a URL
+    if "slack.com" in thread:
+        parsed = _parse_slack_thread_url(thread)
+        if not parsed:
+            return (
+                "Could not parse Slack URL. Expected format: "
+                "https://workspace.slack.com/archives/CHANNEL_ID/pTIMESTAMP"
+            )
+        channel_id, thread_ts = parsed
+        ctx.context.slack_channel_id = channel_id
+        ctx.context.slack_thread_ts = thread_ts
+        return f"Set target thread: channel={channel_id}, thread_ts={thread_ts}"
+
+    # Assume it's a raw timestamp
+    # Basic validation: should look like a Slack timestamp (digits with a dot)
+    if not re.match(r"^\d+\.\d+$", thread):
+        return (
+            "Invalid thread timestamp format. Expected format: 1234567890.123456 "
+            "or a full Slack URL."
+        )
+
+    ctx.context.slack_thread_ts = thread
+    return f"Set target thread_ts={thread}. Channel will use configured default."

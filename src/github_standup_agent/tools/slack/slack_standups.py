@@ -55,7 +55,7 @@ def get_team_slack_standups(
 
         # Find standup threads
         standup_threads: list[dict[str, Any]] = []
-        thread_prefix = "Standup"
+        thread_prefix = ":robot_face: Standup :thread:"
 
         for msg in messages:
             msg_ts = float(msg.get("ts", 0))

@@ -18,6 +18,7 @@ from github_standup_agent.tools.history import (
 from github_standup_agent.tools.slack import (
     confirm_slack_publish,
     publish_standup_to_slack,
+    set_slack_thread,
 )
 
 COORDINATOR_INSTRUCTIONS = """You coordinate standup generation.
@@ -35,9 +36,10 @@ For "copy to clipboard" or "save" requests: use those tools directly.
 For refinement requests: call create_standup_summary again with the feedback.
 
 For "publish to slack" requests:
-1. First call publish_standup_to_slack WITHOUT confirmed=True - this shows a preview
-2. Wait for user to confirm with words like "yes", "confirm", "publish it"
-3. Call confirm_slack_publish, then call publish_standup_to_slack with confirmed=True
+1. If the user provides a specific thread URL or timestamp, call set_slack_thread first
+2. Call publish_standup_to_slack WITHOUT confirmed=True - this shows a preview
+3. Wait for user to confirm with words like "yes", "confirm", "publish it"
+4. Call confirm_slack_publish, then call publish_standup_to_slack with confirmed=True
 
 FEEDBACK DETECTION:
 When the user expresses satisfaction or dissatisfaction with the standup, capture feedback:
@@ -99,6 +101,7 @@ def create_coordinator_agent(
             # Slack tools
             publish_standup_to_slack,
             confirm_slack_publish,
+            set_slack_thread,
             # Feedback tools
             capture_feedback_rating,
             capture_feedback_text,
