@@ -1,6 +1,10 @@
 """Tools for data gathering and integration."""
 
 from github_standup_agent.tools.clipboard import copy_to_clipboard
+from github_standup_agent.tools.feedback import (
+    capture_feedback_rating,
+    capture_feedback_text,
+)
 from github_standup_agent.tools.github import (
     get_activity_feed,
     get_activity_summary,
@@ -46,4 +50,7 @@ __all__ = [
     "get_team_slack_standups",
     "publish_standup_to_slack",
     "confirm_slack_publish",
+    # Feedback tools
+    "capture_feedback_rating",
+    "capture_feedback_text",
 ]

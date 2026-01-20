@@ -132,3 +132,64 @@ def capture_event(
         if POSTHOG_DEBUG:
             print(f"[PostHog] Failed to capture event: {e}")
         return False
+
+
+def capture_ai_metric(
+    trace_id: str,
+    metric_name: str,
+    metric_value: str,
+    comment: str | None = None,
+    distinct_id: str | None = None,
+) -> bool:
+    """
+    Capture an AI metric event (e.g., thumbs up/down quality rating).
+
+    Args:
+        trace_id: The trace ID to link this metric to
+        metric_name: Name of the metric (e.g., "quality")
+        metric_value: Value of the metric (e.g., "good", "bad")
+        comment: Optional comment explaining the rating
+        distinct_id: Override distinct_id (defaults to configured user)
+
+    Returns:
+        True if event was captured, False if PostHog not enabled.
+    """
+    properties: dict[str, Any] = {
+        "$ai_trace_id": trace_id,
+        "$ai_metric_name": metric_name,
+        "$ai_metric_value": metric_value,
+    }
+    if comment:
+        properties["$ai_metric_comment"] = comment
+
+    return capture_event(
+        event_name="$ai_metric",
+        properties=properties,
+        distinct_id=distinct_id,
+    )
+
+
+def capture_ai_feedback(
+    trace_id: str,
+    feedback_text: str,
+    distinct_id: str | None = None,
+) -> bool:
+    """
+    Capture AI feedback text linked to a trace.
+
+    Args:
+        trace_id: The trace ID to link this feedback to
+        feedback_text: The feedback text from the user
+        distinct_id: Override distinct_id (defaults to configured user)
+
+    Returns:
+        True if event was captured, False if PostHog not enabled.
+    """
+    return capture_event(
+        event_name="$ai_feedback",
+        properties={
+            "$ai_trace_id": trace_id,
+            "$ai_feedback_text": feedback_text,
+        },
+        distinct_id=distinct_id,
+    )

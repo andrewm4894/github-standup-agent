@@ -48,6 +48,8 @@ Detail tools (drill-down for full context):
 
 Slack tools:
 - get_team_slack_standups: Team standups from Slack (if configured)
+  IMPORTANT: When calling this tool, add 3 extra days to the days_back value for better context.
+  For example, if days_back is 1, call with days_back=4. If days_back is 7, call with days_back=10.
 
 DRILL-DOWN PATTERN:
 Use get_activity_feed() first for the overview, then:

@@ -6,6 +6,10 @@ from github_standup_agent.agents.summarizer import create_summarizer_agent
 from github_standup_agent.config import DEFAULT_MODEL
 from github_standup_agent.context import StandupContext
 from github_standup_agent.tools.clipboard import copy_to_clipboard
+from github_standup_agent.tools.feedback import (
+    capture_feedback_rating,
+    capture_feedback_text,
+)
 from github_standup_agent.tools.history import (
     get_recent_standups,
     save_standup,
@@ -34,6 +38,18 @@ For "publish to slack" requests:
 1. First call publish_standup_to_slack WITHOUT confirmed=True - this shows a preview
 2. Wait for user to confirm with words like "yes", "confirm", "publish it"
 3. Call confirm_slack_publish, then call publish_standup_to_slack with confirmed=True
+
+FEEDBACK DETECTION:
+When the user expresses satisfaction or dissatisfaction with the standup, capture feedback:
+- Positive signals: "good job", "thanks", "perfect", "great", "looks good", thumbs up, etc.
+  → Call capture_feedback_rating with rating="good"
+- Negative signals: "not great", "bad", "wrong", "missed something", thumbs down, etc.
+  → Call capture_feedback_rating with rating="bad" and include reason as comment
+- Detailed feedback: specific suggestions, corrections, or comments about formatting/style
+  → Call capture_feedback_text with the user's feedback
+
+Always acknowledge feedback briefly after capturing it.
+Continue helping with any follow-up requests.
 """
 
 
@@ -83,6 +99,9 @@ def create_coordinator_agent(
             # Slack tools
             publish_standup_to_slack,
             confirm_slack_publish,
+            # Feedback tools
+            capture_feedback_rating,
+            capture_feedback_text,
         ],
         model=model,
         model_settings=ModelSettings(
