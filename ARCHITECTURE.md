@@ -82,7 +82,7 @@ flowchart LR
     subgraph Coordinator["Coordinator Agent"]
         direction TB
         c_inst["Instructions"]
-        c_tools["Tools:<br/>- gather_github_data<br/>- create_standup_summary<br/>- copy_to_clipboard<br/>- save_standup<br/>- publish_standup_to_slack"]
+        c_tools["Tools:<br/>- gather_github_data<br/>- create_standup_summary<br/>- copy_to_clipboard<br/>- save_standup<br/>- publish_standup_to_slack<br/>- capture_feedback_rating<br/>- capture_feedback_text"]
     end
 
     subgraph DataGatherer["Data Gatherer Agent (as tool)"]
@@ -327,6 +327,13 @@ Tools are organized in `tools/slack/`.
 | `save_standup` | `tools/history.py` | Save to history DB |
 | `save_standup_to_file` | `tools/history.py` | Export to markdown file |
 
+### Feedback Tools
+
+| Tool | File | Description |
+|------|------|-------------|
+| `capture_feedback_rating` | `tools/feedback.py` | Capture thumbs up/down rating |
+| `capture_feedback_text` | `tools/feedback.py` | Capture detailed text feedback |
+
 ## Guardrails
 
 The system includes input/output guardrails for validation:
@@ -371,6 +378,8 @@ When `POSTHOG_API_KEY` is set:
 |-------|------|------------|
 | `standup_generated` | After every generation | summary, username, days_back, metadata |
 | `standup_saved` | When explicitly saved | Same as above |
+| `$ai_metric` | User gives thumbs up/down | trace_id, metric_name, metric_value, comment |
+| `$ai_feedback` | User gives text feedback | trace_id, feedback_text |
 
 ## Directory Structure
 
@@ -391,6 +400,7 @@ src/github_standup_agent/
 │   ├── __init__.py        # Re-exports all tools
 │   ├── clipboard.py       # System clipboard
 │   ├── history.py         # History DB tools
+│   ├── feedback.py        # Feedback capture tools
 │   ├── github/            # GitHub CLI wrappers
 │   │   ├── github_activity.py   # get_activity_summary
 │   │   ├── github_events.py     # get_activity_feed

@@ -269,5 +269,15 @@ uv pip install -e ../posthog-python
 When PostHog is enabled, the following custom events are emitted:
 - `standup_generated` - Emitted after every standup generation with full summary and metadata
 - `standup_saved` - Emitted when the agent explicitly calls the `save_standup` tool
+- `$ai_metric` - Emitted when user provides thumbs up/down feedback (linked via `$ai_trace_id`)
+- `$ai_feedback` - Emitted when user provides detailed text feedback (linked via `$ai_trace_id`)
 
 Event properties include: `summary`, `github_username`, `days_back`, `date`, `summary_length`, `has_prs`, `has_issues`, `has_commits`, `has_reviews`
+
+### Feedback Tools
+
+The agent can capture user feedback via two tools:
+- **`capture_feedback_rating`** - Capture thumbs up/down with optional comment
+- **`capture_feedback_text`** - Capture detailed text feedback
+
+These use a hybrid approach: creating both an SDK `custom_span` (shows in trace hierarchy) and a PostHog event (for dashboard queries). The agent automatically detects feedback signals like "good job", "thanks", "not great", etc.
