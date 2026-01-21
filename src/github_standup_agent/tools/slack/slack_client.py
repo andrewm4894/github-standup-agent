@@ -141,6 +141,8 @@ def post_to_thread(
             "channel": channel_id,
             "thread_ts": thread_ts,
             "text": text,
+            "unfurl_links": False,
+            "unfurl_media": False,
         }
         if username:
             kwargs["username"] = username
