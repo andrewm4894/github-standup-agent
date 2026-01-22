@@ -65,3 +65,6 @@ config/examples.md
 
 # Generated standup file
 standup.md
+
+# Chat session log
+log.txt

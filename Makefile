@@ -1,4 +1,4 @@
-.PHONY: install install-dev lint type-check test check clean build publish chat chat-resume sessions
+.PHONY: install install-dev lint type-check test check clean build publish chat chat-log chat-resume sessions
 
 # Install the package
 install:
@@ -49,6 +49,10 @@ standup:
 # Interactive chat
 chat:
 	uv run standup chat
+
+# Interactive chat with logging to log.txt
+chat-log:
+	script log.txt uv run standup chat
 
 # Resume last chat session
 chat-resume:
