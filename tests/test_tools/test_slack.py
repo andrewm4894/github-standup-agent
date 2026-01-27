@@ -66,7 +66,7 @@ class TestGetTeamSlackStandups:
         mock_get_messages.return_value = [
             {
                 "ts": recent_ts,
-                "text": "Standup - January 15, 2025",
+                "text": ":robot_face: Standup :thread: January 15, 2025",
                 "thread_ts": recent_ts,
             }
         ]
