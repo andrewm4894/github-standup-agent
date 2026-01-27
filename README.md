@@ -1,5 +1,10 @@
 # GitHub Standup Agent
 
+[![CI](https://github.com/andrewm4894/github-standup-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/andrewm4894/github-standup-agent/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/github-standup-agent)](https://pypi.org/project/github-standup-agent/)
+[![Python](https://img.shields.io/pypi/pyversions/github-standup-agent)](https://pypi.org/project/github-standup-agent/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 AI-powered daily standup summaries from your GitHub activity, built with the [OpenAI Agents SDK](https://github.com/openai/openai-agents-python).
 
 ## Features
@@ -16,14 +21,7 @@ AI-powered daily standup summaries from your GitHub activity, built with the [Op
 
 ## Architecture
 
-This project showcases many features of the OpenAI Agents SDK:
-
-- **Multi-Agent Workflow**: Coordinator → Data Gatherer → Summarizer
-- **Function Tools**: `@function_tool` decorated functions for GitHub CLI operations
-- **Handoffs**: Agents delegate to specialized sub-agents
-- **Guardrails**: Input validation and PII detection
-- **Hooks**: Logging and observability
-- **Sessions**: SQLite-based history for past standups
+See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed architecture documentation, including agent flow, tool patterns, and component details.
 
 ## Installation
 
