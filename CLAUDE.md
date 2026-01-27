@@ -271,9 +271,9 @@ make install-posthog    # Install PostHog from git branch (PR #408)
 make install-all        # Install dev + posthog dependencies
 ```
 
-> **Note:** PostHog is currently installed from a git branch (`feat/llma-add-openai-agents-sdk`)
-> pending [PR #408](https://github.com/PostHog/posthog-python/pull/408). Once merged and released,
-> update `pyproject.toml` to use a versioned dependency (e.g., `posthog>=X.Y.Z`).
+> **Note:** `make install-posthog` installs from a git branch (`feat/llma-add-openai-agents-sdk`)
+> for openai-agents tracing support, pending [PR #408](https://github.com/PostHog/posthog-python/pull/408).
+> Once merged and released, update `pyproject.toml` version and remove the git override from the Makefile.
 
 ### Custom Events
 

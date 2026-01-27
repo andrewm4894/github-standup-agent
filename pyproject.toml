@@ -1,6 +1,6 @@
 [project]
 name = "github-standup-agent"
-version = "0.3.1"
+version = "0.3.2"
 description = "AI-powered daily standup summaries from GitHub activity using OpenAI Agents SDK"
 readme = "README.md"
 license = "MIT"
@@ -39,9 +39,11 @@ dev = [
     "mypy>=1.0",
 ]
 posthog = [
-    # TODO: switch to posthog>=X.Y.Z once PR #408 is merged and released
+    # TODO: bump version once PR #408 is merged and released
     # https://github.com/PostHog/posthog-python/pull/408
-    "posthog @ git+https://github.com/PostHog/posthog-python.git@feat/llma-add-openai-agents-sdk",
+    # For openai-agents tracing support, install from git branch instead:
+    #   uv pip install "posthog @ git+https://github.com/PostHog/posthog-python.git@feat/llma-add-openai-agents-sdk"
+    "posthog>=7.5.0",
 ]
 
 [project.scripts]
@@ -55,9 +57,6 @@ Documentation = "https://github.com/andymaguire/github-standup-agent#readme"
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
-
-[tool.hatch.metadata]
-allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/github_standup_agent"]
