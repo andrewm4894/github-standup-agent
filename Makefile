@@ -1,4 +1,4 @@
-.PHONY: install install-dev lint type-check test check clean build publish chat chat-log chat-resume sessions
+.PHONY: install install-dev install-posthog install-all lint type-check test check clean build publish chat chat-log chat-resume sessions
 
 # Install the package
 install:
@@ -7,6 +7,14 @@ install:
 # Install with dev dependencies
 install-dev:
 	uv pip install -e ".[dev]"
+
+# Install with PostHog instrumentation (uses git branch until SDK PR is merged)
+install-posthog:
+	uv pip install -e ".[posthog]"
+
+# Install with all optional dependencies
+install-all:
+	uv pip install -e ".[dev,posthog]"
 
 # Run linting
 lint:
