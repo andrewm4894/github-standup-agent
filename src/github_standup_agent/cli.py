@@ -65,8 +65,14 @@ def generate(
     ] = 1,
     output: Annotated[
         str,
-        typer.Option("--output", "-o", help="Output destination: stdout or clipboard."),
+        typer.Option("--output", "-o", help="Output destination: stdout, clipboard, or file."),
     ] = "stdout",
+    output_file: Annotated[
+        str | None,
+        typer.Option(
+            "--output-file", "-f", help="Filename when output is 'file' (default: standup.txt)."
+        ),
+    ] = None,
     with_history: Annotated[
         bool,
         typer.Option("--with-history", help="Include context from recent standups."),
@@ -117,6 +123,13 @@ def generate(
 
             pyperclip.copy(result)
             console.print("[green]Standup copied to clipboard![/green]")
+        elif output == "file":
+            from pathlib import Path
+
+            filename = output_file or "standup.txt"
+            filepath = Path(filename)
+            filepath.write_text(result)
+            console.print(f"[green]Standup saved to {filepath.absolute()}[/green]")
         else:
             console.print()
             console.print(Panel(result, title="Your Standup", border_style="green"))
