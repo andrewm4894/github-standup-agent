@@ -29,6 +29,7 @@ dependencies = [
     "rich>=13.0",
     "pyperclip>=1.8.0",
     "slack_sdk>=3.27.0",
+    "platformdirs>=4.0.0",
 ]
 
 [project.optional-dependencies]
