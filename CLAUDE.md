@@ -107,10 +107,10 @@ Environment variables (`.env` takes priority over config file):
 - `STANDUP_COORDINATOR_MODEL`, `STANDUP_DATA_GATHERER_MODEL`, `STANDUP_SUMMARIZER_MODEL`
 - `STANDUP_SLACK_BOT_TOKEN` - Slack bot token for reading/publishing standups
 - `STANDUP_SLACK_CHANNEL` - default Slack channel (can also set via CLI)
-- `STANDUP_CONFIG_DIR` - config directory (default: `./config/`)
-- `STANDUP_DATA_DIR` - data directory (default: `./.standup-data/`)
+- `STANDUP_CONFIG_DIR` - config directory (default: platform-specific user config dir, e.g., `~/.config/github-standup-agent` on Linux, `~/Library/Application Support/github-standup-agent` on macOS)
+- `STANDUP_DATA_DIR` - data directory (default: platform-specific user data dir, e.g., `~/.local/share/github-standup-agent` on Linux)
 
-Config file: `./config/config.json` (see `config/config.example.json` for template)
+Config file location: `$STANDUP_CONFIG_DIR/config.json` (see `config/config.example.json` in the repo for template)
 
 ## Style Customization
 
@@ -127,9 +127,11 @@ standup config --set-style "Be very concise. Use bullet points only. Skip blocke
 
 For more detailed customization, create and edit a style file:
 ```bash
-standup config --init-style    # Creates config/style.md from config/style.example.md
+standup config --init-style    # Creates style.md in your config directory
 standup config --edit-style    # Opens the file in your editor
 ```
+
+The file is created at `$STANDUP_CONFIG_DIR/style.md` (defaults to platform-specific user config directory).
 
 Example `style.md` content:
 ```markdown
@@ -150,9 +152,11 @@ Example `style.md` content:
 Provide real examples of standups you like. This is "few-shot prompting" - the AI will match the tone, format, and level of detail from your examples.
 
 ```bash
-standup config --init-examples    # Creates config/examples.md from config/examples.example.md
+standup config --init-examples    # Creates examples.md in your config directory
 standup config --edit-examples    # Opens the file in your editor
 ```
+
+The file is created at `$STANDUP_CONFIG_DIR/examples.md` (defaults to platform-specific user config directory).
 
 Example `examples.md` content:
 ```markdown

@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 from typing import Any
 
+from platformdirs import user_config_dir, user_data_dir
 from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -11,15 +12,23 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 DEFAULT_MODEL = "gpt-5.2"
 
 # Config directory - for config.json, style.md, examples.md
-# Defaults to ./config/, can be overridden with STANDUP_CONFIG_DIR env var
-CONFIG_DIR = Path(os.environ.get("STANDUP_CONFIG_DIR", Path.cwd() / "config"))
+# Defaults to platform-specific user config directory, can be overridden with STANDUP_CONFIG_DIR
+# Examples: ~/.config/github-standup-agent (Linux),
+#           ~/Library/Application Support/github-standup-agent (macOS)
+CONFIG_DIR = Path(
+    os.environ.get("STANDUP_CONFIG_DIR", user_config_dir("github-standup-agent", appauthor=False))
+)
 CONFIG_FILE = CONFIG_DIR / "config.json"
 STYLE_FILE = CONFIG_DIR / "style.md"
 EXAMPLES_FILE = CONFIG_DIR / "examples.md"
 
 # Data directory - for databases and runtime data
-# Defaults to ./.standup-data/, can be overridden with STANDUP_DATA_DIR env var
-DATA_DIR = Path(os.environ.get("STANDUP_DATA_DIR", Path.cwd() / ".standup-data"))
+# Defaults to platform-specific user data directory, can be overridden with STANDUP_DATA_DIR
+# Examples: ~/.local/share/github-standup-agent (Linux),
+#           ~/Library/Application Support/github-standup-agent (macOS)
+DATA_DIR = Path(
+    os.environ.get("STANDUP_DATA_DIR", user_data_dir("github-standup-agent", appauthor=False))
+)
 DB_FILE = DATA_DIR / "standup_history.db"
 SESSIONS_DB_FILE = DATA_DIR / "chat_sessions.db"
 
@@ -81,7 +90,7 @@ class StandupConfig(BaseSettings):
 
         Priority (highest to lowest):
         1. Environment variables / .env file
-        2. Config file (CONFIG_DIR/config.json, defaults to .standup-data/)
+        2. Config file (CONFIG_DIR/config.json, defaults to user config directory)
         3. Default values
         """
         import json
