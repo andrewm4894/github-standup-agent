@@ -45,6 +45,9 @@ standup generate
 # Look back 3 days, copy to clipboard
 standup generate --days 3 --output clipboard
 
+# Save to a text file
+standup generate --output file --output-file standup.txt
+
 # Interactive chat mode
 standup chat
 ```

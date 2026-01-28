@@ -38,3 +38,13 @@ def test_history_list_empty(tmp_path, monkeypatch):
     )
     result = runner.invoke(app, ["history", "--list"])
     assert result.exit_code == 0
+
+
+def test_generate_help():
+    """Test that generate --help shows output options."""
+    result = runner.invoke(app, ["generate", "--help"])
+    assert result.exit_code == 0
+    assert "stdout" in result.stdout
+    assert "clipboard" in result.stdout
+    assert "file" in result.stdout
+    assert "--output-file" in result.stdout

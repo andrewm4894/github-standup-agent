@@ -91,7 +91,7 @@ Tools are organized in `tools/github/` with a two-tier pattern:
 ### CLI Commands
 
 Entry point is `standup` (defined in `cli.py` using Typer):
-- `standup generate [--days N] [--output clipboard] [--with-history] [--verbose/--quiet]`
+- `standup generate [--days N] [--output stdout|clipboard|file] [--output-file FILE] [--with-history] [--verbose/--quiet]`
 - `standup chat [--days N] [--verbose/--quiet] [--resume] [--session NAME]` - interactive refinement session
 - `standup sessions [--list] [--clear]` - manage chat sessions
 - `standup history [--list] [--date YYYY-MM-DD] [--clear]`
