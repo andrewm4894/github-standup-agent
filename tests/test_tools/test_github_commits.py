@@ -137,11 +137,11 @@ class TestListCommits:
         assert "username not available" in result.lower()
 
     @patch("subprocess.run")
-    def test_list_commits_long_message_truncated(self, mock_run, mock_context):
-        """Test that long commit messages are truncated."""
+    def test_list_commits_long_message_included(self, mock_run, mock_context):
+        """Test that long commit messages are included in output."""
         from github_standup_agent.tools.github.github_commits import list_commits
 
-        long_message = "A" * 100  # Longer than 70 char limit
+        long_message = "A" * 100
         response = json.dumps([{
             "sha": "abc123def456",
             "commit": {
@@ -160,4 +160,5 @@ class TestListCommits:
 
         result = invoke_tool(list_commits, mock_context, days_back=1)
 
-        assert "..." in result  # Truncation indicator
+        assert "abc123d" in result  # Short SHA included
+        assert "owner/repo" in result

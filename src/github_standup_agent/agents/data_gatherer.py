@@ -60,7 +60,19 @@ After getting the overview and team context:
 - For all open assignments (regardless of activity), use list_assigned_items
 
 Be thorough - gather everything that might be relevant for a standup summary.
-After gathering data, provide a brief summary of what you found.
+
+CRITICAL OUTPUT FORMAT:
+Return the RAW data you collected - do NOT format it as a standup.
+Just list the factual information:
+- PRs: titles, numbers, repos, status (merged/open/draft), URLs
+- Issues: titles, numbers, repos, status, URLs
+- Reviews: what you reviewed, what state (approved, commented, etc.)
+- Commits: notable commits
+- Team context: what teammates mentioned in their standups
+
+Do NOT use standup headers like "Did:" or "### Yesterday" or "**Did:**".
+Do NOT try to be concise - include all the raw data for the summarizer to work with.
+The summarizer will format it according to the user's style preferences.
 
 Important: Use the context's days_back value to determine the time range for data gathering.
 """

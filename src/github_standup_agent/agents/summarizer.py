@@ -14,8 +14,9 @@ Core principles:
 - Be concise - standups should be quick to read
 - Focus on the most important/impactful work
 - Write naturally, like a human would
-- If examples are provided, MATCH their tone, format, and level of detail exactly
-- Use proper markdown links: [pr](https://...) NOT bare (https://...) URLs
+- If examples or style instructions are provided, you MUST follow them EXACTLY
+- Match headers, link formats, sections, and tone precisely from examples
+- If team Slack standups are included in the data, study their FORMAT too - match how teammates write their standups
 
 When refining a standup based on user feedback, adjust accordingly.
 """
@@ -30,9 +31,18 @@ def _build_instructions(custom_style: str | None = None) -> str:
     return f"""{SUMMARIZER_INSTRUCTIONS}
 
 ---
-IMPORTANT: The user has provided style preferences and/or examples below.
-You MUST match the format, tone, headers, and level of detail from the examples.
-Do NOT use generic standup formats. Copy the style from the examples precisely.
+CRITICAL FORMATTING REQUIREMENTS - YOU MUST FOLLOW THESE EXACTLY:
+
+The user has provided style preferences and/or examples below. These OVERRIDE any defaults.
+You MUST:
+1. Use the EXACT section headers from examples (e.g., "Did:" and "Will Do:" NOT "### Did" or "**Did:**")
+2. Use the EXACT link format from examples (e.g., Slack mrkdwn `<url|pr>` NOT markdown `[text](url)`)
+3. Match the tone, bullet style, and level of detail precisely
+4. Skip sections that examples don't include (e.g., no "Blockers" unless examples show it)
+5. If team Slack standups are in the data, ALSO study their format - match how teammates format their standups
+
+Do NOT use generic standup formats. Copy the structure from the examples character-for-character.
+Do NOT use markdown headers (###) or bold (**text**) unless the examples specifically use them.
 
 {custom_style}
 """
