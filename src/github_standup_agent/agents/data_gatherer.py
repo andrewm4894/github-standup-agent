@@ -10,6 +10,7 @@ from github_standup_agent.tools.github import (
     get_issue_details,
     get_pr_details,
     list_assigned_items,
+    list_comments,
     list_commits,
     list_issues,
     list_prs,
@@ -18,14 +19,13 @@ from github_standup_agent.tools.github import (
 from github_standup_agent.tools.slack import get_team_slack_standups
 
 DATA_GATHERER_INSTRUCTIONS = """You are a GitHub data gathering specialist. Your job is to collect
-comprehensive information about a user's GitHub activity.
+comprehensive information about a user's GitHub activity and team context.
 
 RECOMMENDED APPROACH:
-1. Start with get_activity_feed() - this gives you a complete chronological list of all activity
-   (commits, PRs, reviews, issues, comments) in one call
-2. Use list tools for more detail on specific categories (PRs, issues, reviews, commits)
-3. Use detail tools (get_pr_details, get_issue_details) to drill into specific items when needed
-4. Fetch team standups from Slack (if configured)
+1. Start with get_activity_feed() - chronological list of all your GitHub activity
+2. Call get_team_slack_standups() - get team context from recent standups (IMPORTANT for context)
+3. Use list tools for more detail on specific categories (PRs, issues, reviews, commits, comments)
+4. Use detail tools (get_pr_details, get_issue_details) to drill into specific items when needed
 
 AVAILABLE TOOLS:
 
@@ -33,11 +33,17 @@ Overview tools:
 - get_activity_feed: Complete chronological feed of all GitHub activity (START HERE)
 - get_activity_summary: Aggregate contribution statistics
 
+Team context (ALWAYS call this if Slack is configured):
+- get_team_slack_standups: Recent team standups from Slack showing what teammates are working on
+  This provides valuable context about team priorities, blockers, and collaboration opportunities.
+  IMPORTANT: Add 3 extra days to days_back for better context (e.g., if days_back=1, use days_back=4)
+
 List tools (with date filters):
 - list_prs: PRs with filter_by options: authored, reviewed, assigned, involves, review-requested
 - list_issues: Issues with filter_by options: authored, assigned, mentions, involves
 - list_commits: Commits with optional repo filter
 - list_reviews: Code reviews given or received, with actual states (APPROVED, etc.)
+- list_comments: Comments made on issues and PRs
 
 Assigned items (NO date filter - shows all open assignments):
 - list_assigned_items: All open issues/PRs assigned to user, regardless of activity
@@ -46,13 +52,8 @@ Detail tools (drill-down for full context):
 - get_pr_details: Full PR context - body, review decision, linked issues, CI status, labels
 - get_issue_details: Full issue context - body, linked PRs, labels, milestone
 
-Slack tools:
-- get_team_slack_standups: Team standups from Slack (if configured)
-  IMPORTANT: When calling this tool, add 3 extra days to the days_back value for better context.
-  For example, if days_back is 1, call with days_back=4. If days_back is 7, call with days_back=10.
-
 DRILL-DOWN PATTERN:
-Use get_activity_feed() first for the overview, then:
+After getting the overview and team context:
 - If a PR looks significant, use get_pr_details(repo, number) for full context
 - If an issue needs more context, use get_issue_details(repo, number)
 - For reviews you gave on others' PRs, use list_reviews(filter_by="given")
@@ -83,6 +84,7 @@ def create_data_gatherer_agent(
             list_issues,
             list_commits,
             list_reviews,
+            list_comments,
             # Assigned items (no date filter)
             list_assigned_items,
             # Detail tools

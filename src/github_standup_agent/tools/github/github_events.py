@@ -153,15 +153,14 @@ def _format_activity(activity: dict[str, Any]) -> str:
         head = activity.get("head", "")
 
         if commits:
-            lines = [f"[{time_str}] 📤 PUSH to {repo} ({branch}) - {count} commit(s)"]
+            lines = [f"[{time_str}] PUSH {repo} ({branch}) - {count} commit(s)"]
             for c in commits[:3]:
-                lines.append(f"    • {c['sha']}: {c['message'][:60]}")
+                lines.append(f"    - {c['sha']}: {c['message'][:60]}")
             if len(commits) > 3:
                 lines.append(f"    ... and {len(commits) - 3} more")
             return "\n".join(lines)
         else:
-            # No commit details available, show branch and head SHA
-            return f"[{time_str}] 📤 PUSH to {repo} ({branch}) [{head}]"
+            return f"[{time_str}] PUSH {repo} ({branch}) [{head}]"
 
     elif activity_type == "pull_request":
         action = activity.get("action", "")
@@ -169,45 +168,42 @@ def _format_activity(activity: dict[str, Any]) -> str:
         title = activity.get("title", "")
         branch = activity.get("branch", "")
         draft = " (draft)" if activity.get("draft") else ""
-        emoji = {"opened": "🆕", "merged": "🟣", "closed": "🔴"}.get(action, "📋")
-        # Use title if available, otherwise show branch name
         display = title if title else branch
-        return f"[{time_str}] {emoji} PR {action.upper()}: {repo}#{number} - {display}{draft}"
+        return f"[{time_str}] PR {action.upper()} {repo}#{number} - {display}{draft}"
 
     elif activity_type == "review":
         pr_num = activity.get("pr_number", "")
         pr_title = activity.get("pr_title", "")
         pr_branch = activity.get("pr_branch", "")
         state = activity.get("state", "")
-        emoji = {"approved": "✅", "changes_requested": "🔄", "commented": "💬"}.get(state, "👀")
         display = pr_title if pr_title else pr_branch
-        return f"[{time_str}] {emoji} REVIEW ({state}): {repo}#{pr_num} - {display}"
+        return f"[{time_str}] REVIEW {state.upper()} {repo}#{pr_num} - {display}"
 
     elif activity_type == "issue":
         action = activity.get("action", "")
         number = activity.get("number", "")
         title = activity.get("title", "")
-        return f"[{time_str}] 📋 ISSUE {action.upper()}: {repo}#{number} - {title}"
+        return f"[{time_str}] ISSUE {action.upper()} {repo}#{number} - {title}"
 
     elif activity_type == "comment":
         on = activity.get("on", "")
         number = activity.get("number", "")
         title = activity.get("title", "")
-        return f"[{time_str}] 💬 COMMENT on {on} {repo}#{number} - {title}"
+        return f"[{time_str}] COMMENT on {on} {repo}#{number} - {title}"
 
     elif activity_type == "create":
         ref_type = activity.get("ref_type", "")
         ref = activity.get("ref", "")
-        return f"[{time_str}] 🌱 CREATED {ref_type}: {repo} ({ref})"
+        return f"[{time_str}] CREATED {ref_type} {repo} ({ref})"
 
     elif activity_type == "review_comment":
         pr_num = activity.get("pr_number", "")
         pr_title = activity.get("pr_title", "")
         pr_branch = activity.get("pr_branch", "")
         display = pr_title if pr_title else pr_branch
-        return f"[{time_str}] 💬 REVIEW COMMENT: {repo}#{pr_num} - {display}"
+        return f"[{time_str}] REVIEW_COMMENT {repo}#{pr_num} - {display}"
 
-    return f"[{time_str}] {activity_type}: {repo}"
+    return f"[{time_str}] {activity_type.upper()} {repo}"
 
 
 @function_tool
@@ -290,9 +286,10 @@ def get_activity_feed(
 
         # Format output
         lines = [
-            f"📊 Activity Feed ({len(activities)} events in last {days_back} day(s))\n",
+            f"Activity Feed: {len(activities)} events in last {days_back} day(s)",
             "Summary: " + ", ".join(f"{count} {t}" for t, count in sorted(by_type.items())),
-            "\n--- Events (newest first) ---\n",
+            "",
+            "Events (newest first):",
         ]
 
         for activity in activities:

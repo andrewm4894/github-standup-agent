@@ -73,10 +73,6 @@ def generate(
             "--output-file", "-f", help="Filename when output is 'file' (default: standup.txt)."
         ),
     ] = None,
-    with_history: Annotated[
-        bool,
-        typer.Option("--with-history", help="Include context from recent standups."),
-    ] = False,
     stream: Annotated[
         bool,
         typer.Option("--stream", "-s", help="Stream output in real-time."),
@@ -111,7 +107,6 @@ def generate(
             run_standup_generation(
                 config=config,
                 days_back=days,
-                with_history=with_history,
                 github_username=github_user,
                 stream=stream,
                 verbose=verbose,
@@ -457,54 +452,6 @@ def config(
                 border_style="cyan",
             )
         )
-
-
-@app.command()
-def history(
-    list_all: Annotated[
-        bool,
-        typer.Option("--list", "-l", help="List past standups."),
-    ] = False,
-    date: Annotated[
-        str | None,
-        typer.Option("--date", help="Show standup for a specific date (YYYY-MM-DD)."),
-    ] = None,
-    clear: Annotated[
-        bool,
-        typer.Option("--clear", help="Clear standup history."),
-    ] = False,
-) -> None:
-    """View and manage standup history."""
-    from github_standup_agent.db import StandupDatabase
-
-    db = StandupDatabase()
-
-    if clear:
-        if typer.confirm("Are you sure you want to clear all standup history?"):
-            db.clear_all()
-            console.print("[green]History cleared.[/green]")
-        return
-
-    if date:
-        standup = db.get_by_date(date)
-        if standup:
-            console.print(
-                Panel(standup["summary"], title=f"Standup for {date}", border_style="green")
-            )
-        else:
-            console.print(f"[yellow]No standup found for {date}[/yellow]")
-        return
-
-    if list_all or not any([date, clear]):
-        standups = db.get_recent(limit=10)
-        if not standups:
-            console.print("[dim]No standups in history yet.[/dim]")
-            return
-
-        console.print("[bold]Recent Standups:[/bold]\n")
-        for s in standups:
-            preview = s["summary"][:100] + "..." if len(s["summary"]) > 100 else s["summary"]
-            console.print(f"  [cyan]{s['date']}[/cyan]: {preview}\n")
 
 
 if __name__ == "__main__":

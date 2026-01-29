@@ -78,35 +78,30 @@ def list_commits(
         # Group by repository
         by_repo: dict[str, list[dict[str, Any]]] = {}
         for commit in commits:
-            repo_name = commit.get("repository", {}).get("nameWithOwner", "unknown")
+            repo_data = commit.get("repository", {})
+            repo_name = repo_data.get("fullName") or repo_data.get("nameWithOwner", "unknown")
             if repo_name not in by_repo:
                 by_repo[repo_name] = []
             by_repo[repo_name].append(commit)
 
         # Format output
         lines = [
-            f"Found {len(commits)} commit(s) by {target_user} across {len(by_repo)} repo(s):\n"
+            f"Found {len(commits)} commit(s) by {target_user} across {len(by_repo)} repo(s):"
         ]
 
         for repo_name, repo_commits in by_repo.items():
-            lines.append(f"\n📁 {repo_name}:")
-            for c in repo_commits[:10]:  # Limit per repo for readability
+            lines.append(f"\n{repo_name}:")
+            for c in repo_commits:
                 sha_short = c.get("sha", "")[:7]
                 commit_data = c.get("commit", {})
-                message = commit_data.get("message", "").split("\n")[0][:70]
-                if len(commit_data.get("message", "").split("\n")[0]) > 70:
-                    message += "..."
+                # First line of commit message
+                message = commit_data.get("message", "").split("\n")[0]
 
                 # Get date if available
                 author_date = commit_data.get("author", {}).get("date", "")
-                date_str = ""
-                if author_date:
-                    date_str = f" ({author_date[:10]})"
+                date_str = author_date[:10] if author_date else ""
 
-                lines.append(f"   • [{sha_short}]{date_str} {message}")
-
-            if len(repo_commits) > 10:
-                lines.append(f"   ... and {len(repo_commits) - 10} more commits")
+                lines.append(f"  [{sha_short}] {date_str} {message}")
 
         return "\n".join(lines)
 

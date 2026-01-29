@@ -117,6 +117,55 @@ def get_thread_replies(
         raise SlackClientError(f"Slack API error: {e.response['error']}") from e
 
 
+# Cache for user display names (user_id -> display_name)
+_user_name_cache: dict[str, str] = {}
+_users_read_available: bool | None = None  # None = not checked yet
+
+
+def get_user_display_name(client: WebClient, user_id: str) -> str:
+    """Get display name for a Slack user ID.
+
+    Args:
+        client: Slack WebClient
+        user_id: Slack user ID (e.g., U12345)
+
+    Returns:
+        Display name or real name, falls back to user ID if not found
+
+    Note: Requires users:read scope. Falls back to user ID if scope not available.
+    """
+    global _users_read_available
+
+    # Check cache first
+    if user_id in _user_name_cache:
+        return _user_name_cache[user_id]
+
+    # If we already know users:read isn't available, skip API call
+    if _users_read_available is False:
+        return user_id
+
+    try:
+        result = client.users_info(user=user_id)
+        _users_read_available = True
+        user = result.get("user", {})
+        profile = user.get("profile", {})
+        # Prefer display_name, fall back to real_name, then user ID
+        name = (
+            profile.get("display_name")
+            or profile.get("real_name")
+            or user.get("name")
+            or user_id
+        )
+        _user_name_cache[user_id] = name
+        return name
+    except SlackApiError as e:
+        # Check if it's a scope issue
+        if "missing_scope" in str(e) or "users:read" in str(e):
+            _users_read_available = False
+        _user_name_cache[user_id] = user_id
+        return user_id
+
+
 def post_to_thread(
     client: WebClient,
     channel_id: str,

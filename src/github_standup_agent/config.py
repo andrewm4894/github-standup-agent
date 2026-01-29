@@ -29,7 +29,6 @@ EXAMPLES_FILE = CONFIG_DIR / "examples.md"
 DATA_DIR = Path(
     os.environ.get("STANDUP_DATA_DIR", user_data_dir("github-standup-agent", appauthor=False))
 )
-DB_FILE = DATA_DIR / "standup_history.db"
 SESSIONS_DB_FILE = DATA_DIR / "chat_sessions.db"
 
 
@@ -69,9 +68,6 @@ class StandupConfig(BaseSettings):
     # Repos to include/exclude (empty = all)
     include_repos: list[str] = Field(default_factory=list)
     exclude_repos: list[str] = Field(default_factory=list)
-
-    # History settings
-    history_days_to_keep: int = 30
 
     # Style customization (short instructions, use style.md file for detailed customization)
     style_instructions: str | None = None
@@ -115,7 +111,6 @@ class StandupConfig(BaseSettings):
             "data_gatherer_model": "STANDUP_DATA_GATHERER_MODEL",
             "summarizer_model": "STANDUP_SUMMARIZER_MODEL",
             "temperature": "STANDUP_TEMPERATURE",
-            "history_days_to_keep": "STANDUP_HISTORY_DAYS_TO_KEEP",
             "style_instructions": "STANDUP_STYLE_INSTRUCTIONS",
         }
 
