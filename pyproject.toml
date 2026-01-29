@@ -1,6 +1,6 @@
 [project]
 name = "github-standup-agent"
-version = "0.3.2"
+version = "0.3.3"
 description = "AI-powered daily standup summaries from GitHub activity using OpenAI Agents SDK"
 readme = "README.md"
 license = "MIT"
