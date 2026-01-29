@@ -40,11 +40,7 @@ dev = [
     "mypy>=1.0",
 ]
 posthog = [
-    # TODO: bump version once PR #408 is merged and released
-    # https://github.com/PostHog/posthog-python/pull/408
-    # For openai-agents tracing support, install from git branch instead:
-    #   uv pip install "posthog @ git+https://github.com/PostHog/posthog-python.git@feat/llma-add-openai-agents-sdk"
-    "posthog>=7.5.0",
+    "posthog>=7.7.0",
 ]
 
 [project.scripts]

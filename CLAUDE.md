@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 make install-dev      # Install with dev dependencies
-make install-posthog  # Install with PostHog instrumentation (git branch)
+make install-posthog  # Install with PostHog instrumentation
 make install-all      # Install with all optional dependencies
 make test             # Run tests: uv run pytest tests/ -v
 make lint             # Run linting: ruff check + ruff format --check
@@ -270,14 +270,10 @@ Enable agent tracing to PostHog by setting environment variables:
 
 Install the PostHog SDK:
 ```bash
-make install-posthog    # Install PostHog from git branch (PR #408)
+make install-posthog    # Install with PostHog SDK (v7.7.0+)
 # Or install everything:
 make install-all        # Install dev + posthog dependencies
 ```
-
-> **Note:** `make install-posthog` installs from a git branch (`feat/llma-add-openai-agents-sdk`)
-> for openai-agents tracing support, pending [PR #408](https://github.com/PostHog/posthog-python/pull/408).
-> Once merged and released, update `pyproject.toml` version and remove the git override from the Makefile.
 
 ### Custom Events
 
