@@ -6,17 +6,23 @@ from github_standup_agent.config import DEFAULT_MODEL
 from github_standup_agent.context import StandupContext
 from github_standup_agent.tools.clipboard import copy_to_clipboard
 from github_standup_agent.tools.history import save_standup_to_file
+from github_standup_agent.tools.slack import get_team_slack_standups
 
 SUMMARIZER_INSTRUCTIONS = """You are a standup summary specialist.
 Create daily standup summaries from GitHub activity data.
+
+CRITICAL FIRST STEP:
+Before writing ANY standup, call get_team_slack_standups to fetch recent team standups.
+Study the EXACT format your teammates use - headers, link style, sections, tone.
+Your output MUST match their format precisely.
 
 Core principles:
 - Be concise - standups should be quick to read
 - Focus on the most important/impactful work
 - Write naturally, like a human would
-- If examples or style instructions are provided, you MUST follow them EXACTLY
-- Match headers, link formats, sections, and tone precisely from examples
-- If team Slack standups are included in the data, study their FORMAT too - match how teammates write their standups
+- Copy the EXACT format from team Slack standups (headers like "Did:" not "## Did")
+- Use Slack mrkdwn links: <https://github.com/org/repo/pull/123|pr> NOT markdown links
+- Only include sections that teammates use (usually just "Did:" and "Will Do:")
 
 When refining a standup based on user feedback, adjust accordingly.
 """
@@ -33,16 +39,18 @@ def _build_instructions(custom_style: str | None = None) -> str:
 ---
 CRITICAL FORMATTING REQUIREMENTS - YOU MUST FOLLOW THESE EXACTLY:
 
-The user has provided style preferences and/or examples below. These OVERRIDE any defaults.
-You MUST:
-1. Use the EXACT section headers from examples (e.g., "Did:" and "Will Do:" NOT "### Did" or "**Did:**")
-2. Use the EXACT link format from examples (e.g., Slack mrkdwn `<url|pr>` NOT markdown `[text](url)`)
-3. Match the tone, bullet style, and level of detail precisely
-4. Skip sections that examples don't include (e.g., no "Blockers" unless examples show it)
-5. If team Slack standups are in the data, ALSO study their format - match how teammates format their standups
+STEP 1: Call get_team_slack_standups first to see how teammates format their standups.
+STEP 2: Copy their EXACT format - same headers, same link style, same sections.
 
-Do NOT use generic standup formats. Copy the structure from the examples character-for-character.
-Do NOT use markdown headers (###) or bold (**text**) unless the examples specifically use them.
+The user has also provided style preferences and/or examples below.
+You MUST:
+1. Use the EXACT section headers (e.g., "Did:" and "Will Do:" NOT "## Did" or "### Did" or "**Did:**")
+2. Use Slack mrkdwn links: <https://github.com/org/repo/pull/123|pr> NOT markdown `[text](url)`
+3. Match the tone, bullet style, and level of detail from examples and team standups
+4. Skip sections that examples don't include (e.g., no "Blockers" section)
+
+Do NOT use markdown headers (##, ###) or bold (**text**).
+Do NOT use repo#number format - use short labels like "pr" or "issue" in links.
 
 {custom_style}
 """
@@ -67,6 +75,7 @@ def create_summarizer_agent(
         handoff_description="Creates formatted standup summaries from GitHub data",
         instructions=instructions,
         tools=[
+            get_team_slack_standups,  # Fetch recent standups to copy format
             save_standup_to_file,
             copy_to_clipboard,
         ],
@@ -84,6 +93,7 @@ summarizer_agent = Agent[StandupContext](
     handoff_description="Creates formatted standup summaries from GitHub data",
     instructions=SUMMARIZER_INSTRUCTIONS,
     tools=[
+        get_team_slack_standups,
         save_standup_to_file,
         copy_to_clipboard,
     ],
