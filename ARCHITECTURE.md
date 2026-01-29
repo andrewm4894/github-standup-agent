@@ -79,7 +79,7 @@ The system uses the **agents-as-tools** pattern — sub-agents are wrapped via `
 flowchart LR
     subgraph Coordinator["Coordinator Agent"]
         direction TB
-        c_tools["Tools:<br/>- gather_github_data<br/>- create_standup_summary<br/>- copy_to_clipboard<br/>- save_standup_to_file<br/>- publish_standup_to_slack<br/>- confirm_slack_publish<br/>- set_slack_thread<br/>- capture_feedback_rating<br/>- capture_feedback_text"]
+        c_tools["Tools:<br/>- gather_data<br/>- create_standup_summary<br/>- copy_to_clipboard<br/>- save_standup_to_file<br/>- publish_standup_to_slack<br/>- confirm_slack_publish<br/>- set_slack_thread<br/>- capture_feedback_rating<br/>- capture_feedback_text"]
     end
 
     subgraph DataGatherer["Data Gatherer Agent (as tool)"]
@@ -92,7 +92,7 @@ flowchart LR
         s_tools["Tools:<br/>- save_standup_to_file<br/>- copy_to_clipboard"]
     end
 
-    Coordinator -->|"gather_github_data"| DataGatherer
+    Coordinator -->|"gather_data"| DataGatherer
     Coordinator -->|"create_standup_summary"| Summarizer
 ```
 
@@ -119,7 +119,7 @@ sequenceDiagram
     Runner->>Runner: Load config, style, context
     Runner->>Coordinator: "Generate standup for last 1 day(s)"
 
-    Coordinator->>DataGatherer: gather_github_data
+    Coordinator->>DataGatherer: gather_data
     DataGatherer->>GitHub: get_activity_feed, list_prs, list_issues, list_commits, list_reviews
     GitHub-->>DataGatherer: Activity data
     DataGatherer-->>Coordinator: Collected data summary
