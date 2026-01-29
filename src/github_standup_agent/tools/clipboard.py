@@ -26,6 +26,6 @@ def copy_to_clipboard(
 
     try:
         pyperclip.copy(content)
-        return "✅ Copied to clipboard!"
+        return "Copied to clipboard."
     except pyperclip.PyperclipException as e:
         return f"Failed to copy to clipboard: {e}"

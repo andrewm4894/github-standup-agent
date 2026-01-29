@@ -251,10 +251,7 @@ def get_pr_details(
             for review in reviews[:5]:
                 reviewer = review.get("author", {}).get("login", "unknown")
                 state = review.get("state", "unknown")
-                emoji = {"APPROVED": "✅", "CHANGES_REQUESTED": "🔄", "COMMENTED": "💬"}.get(
-                    state, "👀"
-                )
-                lines.append(f"  {emoji} @{reviewer}: {state}")
+                lines.append(f"  - @{reviewer}: {state}")
             if len(reviews) > 5:
                 lines.append(f"  ... and {len(reviews) - 5} more")
 
@@ -273,8 +270,7 @@ def get_pr_details(
             for check in status_rollup[:5]:
                 name = check.get("name", check.get("context", "unknown"))
                 state = check.get("conclusion") or check.get("state", "pending")
-                emoji = {"SUCCESS": "✅", "FAILURE": "❌", "PENDING": "⏳"}.get(state.upper(), "❓")
-                lines.append(f"  {emoji} {name}: {state}")
+                lines.append(f"  - {name}: {state}")
 
         # Labels
         labels = pr.get("labels", [])

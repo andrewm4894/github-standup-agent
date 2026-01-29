@@ -95,7 +95,7 @@ def list_assigned_items(
     lines = [f"Found {total} open item(s) assigned to {target_user}:\n"]
 
     if results["issues"]:
-        lines.append(f"\n📋 **Issues ({len(results['issues'])}):**")
+        lines.append(f"\nIssues ({len(results['issues'])}):")
         by_repo: dict[str, list[dict[str, Any]]] = {}
         for issue in results["issues"]:
             repo_name = issue.get("repository", {}).get("nameWithOwner", "unknown")
@@ -104,17 +104,17 @@ def list_assigned_items(
             by_repo[repo_name].append(issue)
 
         for repo_name, issues in by_repo.items():
-            lines.append(f"\n  📁 {repo_name}:")
+            lines.append(f"\n  {repo_name}:")
             for issue in issues:
                 labels = issue.get("labels", [])
                 label_str = ""
                 if labels:
                     label_names = [lbl.get("name", "") for lbl in labels[:3]]
                     label_str = f" [{', '.join(label_names)}]"
-                lines.append(f"    • #{issue['number']}: {issue['title']}{label_str}")
+                lines.append(f"    - #{issue['number']}: {issue['title']}{label_str}")
 
     if results["prs"]:
-        lines.append(f"\n🔀 **Pull Requests ({len(results['prs'])}):**")
+        lines.append(f"\nPull Requests ({len(results['prs'])}):")
         by_repo = {}
         for pr in results["prs"]:
             repo_name = pr.get("repository", {}).get("nameWithOwner", "unknown")
@@ -123,7 +123,7 @@ def list_assigned_items(
             by_repo[repo_name].append(pr)
 
         for repo_name, prs in by_repo.items():
-            lines.append(f"\n  📁 {repo_name}:")
+            lines.append(f"\n  {repo_name}:")
             for pr in prs:
                 draft = " (DRAFT)" if pr.get("isDraft") else ""
                 labels = pr.get("labels", [])
@@ -131,6 +131,6 @@ def list_assigned_items(
                 if labels:
                     label_names = [lbl.get("name", "") for lbl in labels[:3]]
                     label_str = f" [{', '.join(label_names)}]"
-                lines.append(f"    • #{pr['number']}: {pr['title']}{draft}{label_str}")
+                lines.append(f"    - #{pr['number']}: {pr['title']}{draft}{label_str}")
 
     return "\n".join(lines)
