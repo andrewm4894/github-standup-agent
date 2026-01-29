@@ -143,22 +143,14 @@ def list_prs(
     }
     lines = [
         f"Found {len(all_prs)} PR(s) {filter_desc[filter_by]} {target_user} "
-        f"across {len(by_repo)} repo(s):\n"
+        f"across {len(by_repo)} repo(s):"
     ]
 
     for repo_name, repo_prs in by_repo.items():
-        lines.append(f"\n📁 {repo_name}:")
+        lines.append(f"\n{repo_name}:")
         for pr in repo_prs:
-            # Status emoji
-            pr_state = pr.get("state", "unknown").lower()
-            if pr_state == "merged":
-                emoji = "🟣"
-            elif pr_state == "open":
-                emoji = "🟢"
-            else:
-                emoji = "⚫"
-
-            draft = " (DRAFT)" if pr.get("isDraft") else ""
+            pr_state = pr.get("state", "unknown").upper()
+            draft = " DRAFT" if pr.get("isDraft") else ""
             author = pr.get("author", {}).get("login", "")
             author_info = f" by @{author}" if author and filter_by != "authored" else ""
 
@@ -170,8 +162,7 @@ def list_prs(
                 label_str = f" [{', '.join(label_names)}]"
 
             lines.append(
-                f"   {emoji} #{pr['number']}: {pr['title']}{draft}{author_info}{label_str}\n"
-                f"      {pr_state} | {pr['url']}"
+                f"  #{pr['number']} [{pr_state}{draft}] {pr['title']}{author_info}{label_str}"
             )
 
     return "\n".join(lines)
@@ -260,10 +251,7 @@ def get_pr_details(
             for review in reviews[:5]:
                 reviewer = review.get("author", {}).get("login", "unknown")
                 state = review.get("state", "unknown")
-                emoji = {"APPROVED": "✅", "CHANGES_REQUESTED": "🔄", "COMMENTED": "💬"}.get(
-                    state, "👀"
-                )
-                lines.append(f"  {emoji} @{reviewer}: {state}")
+                lines.append(f"  - @{reviewer}: {state}")
             if len(reviews) > 5:
                 lines.append(f"  ... and {len(reviews) - 5} more")
 
@@ -282,8 +270,7 @@ def get_pr_details(
             for check in status_rollup[:5]:
                 name = check.get("name", check.get("context", "unknown"))
                 state = check.get("conclusion") or check.get("state", "pending")
-                emoji = {"SUCCESS": "✅", "FAILURE": "❌", "PENDING": "⏳"}.get(state.upper(), "❓")
-                lines.append(f"  {emoji} {name}: {state}")
+                lines.append(f"  - {name}: {state}")
 
         # Labels
         labels = pr.get("labels", [])

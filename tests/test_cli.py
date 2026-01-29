@@ -29,17 +29,6 @@ def test_config_show():
     assert "Configuration" in result.stdout
 
 
-def test_history_list_empty(tmp_path, monkeypatch):
-    """Test history --list with empty history."""
-    # Use a temp database
-    monkeypatch.setattr(
-        "github_standup_agent.db.DB_FILE",
-        tmp_path / "test.db"
-    )
-    result = runner.invoke(app, ["history", "--list"])
-    assert result.exit_code == 0
-
-
 def test_generate_help():
     """Test that generate --help shows output options."""
     result = runner.invoke(app, ["generate", "--help"])

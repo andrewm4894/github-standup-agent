@@ -11,16 +11,13 @@ from github_standup_agent.tools.github import (
     get_issue_details,
     get_pr_details,
     list_assigned_items,
+    list_comments,
     list_commits,
     list_issues,
     list_prs,
     list_reviews,
 )
-from github_standup_agent.tools.history import (
-    get_recent_standups,
-    save_standup,
-    save_standup_to_file,
-)
+from github_standup_agent.tools.history import save_standup_to_file
 from github_standup_agent.tools.slack import (
     confirm_slack_publish,
     get_team_slack_standups,
@@ -36,6 +33,7 @@ __all__ = [
     "list_issues",
     "list_commits",
     "list_reviews",
+    "list_comments",
     # GitHub tools - assigned (no date filter)
     "list_assigned_items",
     # GitHub tools - details
@@ -43,8 +41,6 @@ __all__ = [
     "get_issue_details",
     # Utility tools
     "copy_to_clipboard",
-    "get_recent_standups",
-    "save_standup",
     "save_standup_to_file",
     # Slack tools
     "get_team_slack_standups",

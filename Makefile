@@ -8,16 +8,13 @@ install:
 install-dev:
 	uv pip install -e ".[dev]"
 
-# Install with PostHog instrumentation from git branch (PR #408)
-# TODO: switch to `uv pip install -e ".[posthog]"` once PR is merged and released
+# Install with PostHog instrumentation
 install-posthog:
 	uv pip install -e ".[posthog]"
-	uv pip install "posthog @ git+https://github.com/PostHog/posthog-python.git@feat/llma-add-openai-agents-sdk"
 
 # Install with all optional dependencies
 install-all:
 	uv pip install -e ".[dev,posthog]"
-	uv pip install "posthog @ git+https://github.com/PostHog/posthog-python.git@feat/llma-add-openai-agents-sdk"
 
 # Run linting
 lint:

@@ -11,6 +11,7 @@ from github_standup_agent.tools.slack.slack_client import (
     get_channel_messages,
     get_slack_client,
     get_thread_replies,
+    get_user_display_name,
     resolve_channel_id,
 )
 
@@ -89,9 +90,13 @@ def get_team_slack_standups(
                 }
 
                 for reply in replies:
+                    user_id = reply.get("user", "unknown")
+                    # Resolve user ID to display name
+                    user_name = get_user_display_name(client, user_id) if user_id != "unknown" else "unknown"
                     thread_data["replies"].append(
                         {
-                            "user": reply.get("user", "unknown"),
+                            "user_id": user_id,
+                            "user_name": user_name,
                             "text": reply.get("text", ""),
                             "timestamp": reply.get("ts"),
                         }
@@ -108,8 +113,18 @@ def get_team_slack_standups(
                 f"in the last {days_back} day(s)."
             )
 
+        # Check if we got real names or just IDs
+        has_real_names = any(
+            reply.get("user_name", "").startswith("U") is False
+            for thread in standup_threads
+            for reply in thread.get("replies", [])
+            if reply.get("user_name")
+        )
+
         # Format output for the agent
-        lines = [f"Found {len(standup_threads)} standup thread(s) from Slack:\n"]
+        lines = [f"Found {len(standup_threads)} standup thread(s) from Slack:"]
+        if not has_real_names and standup_threads:
+            lines.append("(Note: Add users:read scope to Slack bot to show display names)")
 
         for thread in standup_threads:
             lines.append(f"\n--- {thread['date']} ---")
@@ -121,11 +136,13 @@ def get_team_slack_standups(
             if thread["replies"]:
                 lines.append(f"  {len(thread['replies'])} team member standup(s):")
                 for reply in thread["replies"][:10]:  # Limit to avoid huge output
-                    # Truncate long standups
+                    user_name = reply.get("user_name", "unknown")
                     text = reply["text"]
-                    if len(text) > 300:
-                        text = text[:300] + "..."
-                    lines.append(f"  - {text}")
+                    # Truncate long standups
+                    if len(text) > 500:
+                        text = text[:500] + "..."
+                    lines.append(f"\n  [@{user_name}]")
+                    lines.append(f"  {text}")
             else:
                 lines.append("  (No replies yet)")
 

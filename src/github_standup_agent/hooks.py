@@ -107,5 +107,5 @@ class StandupAgentHooks(AgentHooks[StandupContext]):
     ) -> None:
         """Called when a tool completes."""
         if self.verbose:
-            preview = result[:100] + "..." if len(result) > 100 else result
-            console.print(f"[dim]  Tool {tool.name} returned: {preview}[/dim]")
+            console.print(f"[dim]  Tool {tool.name} returned:[/dim]")
+            console.print(f"[dim]{result}[/dim]")

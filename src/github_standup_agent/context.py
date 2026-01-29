@@ -19,7 +19,6 @@ class StandupContext:
 
     # Request parameters
     days_back: int = 1
-    with_history: bool = False
 
     # Data collected during the run (populated by tools)
     collected_prs: list[dict[str, Any]] = field(default_factory=list)
@@ -32,9 +31,6 @@ class StandupContext:
     # Keys are "repo#number" format, e.g., "owner/repo#123"
     pr_details_cache: dict[str, dict[str, Any]] = field(default_factory=dict)
     issue_details_cache: dict[str, dict[str, Any]] = field(default_factory=dict)
-
-    # Historical context
-    recent_standups: list[dict[str, Any]] = field(default_factory=list)
 
     # Current standup being generated/refined
     current_standup: str | None = None

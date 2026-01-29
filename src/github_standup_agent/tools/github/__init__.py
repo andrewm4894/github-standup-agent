@@ -2,6 +2,7 @@
 
 from github_standup_agent.tools.github.github_activity import get_activity_summary
 from github_standup_agent.tools.github.github_assigned import list_assigned_items
+from github_standup_agent.tools.github.github_comments import list_comments
 from github_standup_agent.tools.github.github_commits import list_commits
 from github_standup_agent.tools.github.github_events import get_activity_feed
 from github_standup_agent.tools.github.github_issues import get_issue_details, list_issues
@@ -17,6 +18,7 @@ __all__ = [
     "list_issues",
     "list_commits",
     "list_reviews",
+    "list_comments",
     # Assigned items (no date filter)
     "list_assigned_items",
     # Detail tools

@@ -80,7 +80,7 @@ class TestListPrs:
         assert "owner/repo" in result
         assert "#123" in result
         assert "#124" in result
-        assert "(DRAFT)" in result  # PR 124 is a draft
+        assert "DRAFT" in result  # PR 124 is a draft (shown as [OPEN DRAFT])
         assert len(mock_context.collected_prs) == 2
 
     @patch("subprocess.run")

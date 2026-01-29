@@ -199,31 +199,15 @@ def list_reviews(
     total_reviews = sum(len(r["reviews"]) for r in all_reviews)
     lines = [
         f"Found {total_reviews} review(s) {filter_desc} {target_user} "
-        f"across {len(all_reviews)} PR(s) in {len(by_repo)} repo(s):\n"
+        f"across {len(all_reviews)} PR(s) in {len(by_repo)} repo(s):"
     ]
 
     for repo_name, repo_reviews in by_repo.items():
-        lines.append(f"\n📁 {repo_name}:")
+        lines.append(f"\n{repo_name}:")
         for item in repo_reviews:
-            # PR state emoji
-            pr_state = item.get("pr_state", "").lower()
-            if pr_state == "merged":
-                pr_emoji = "🟣"
-            elif pr_state == "open":
-                pr_emoji = "🟢"
-            else:
-                pr_emoji = "⚫"
-
-            # Overall review decision
+            pr_state = item.get("pr_state", "").upper()
             decision = item.get("review_decision", "")
-            decision_str = ""
-            if decision:
-                decision_emoji = {
-                    "APPROVED": "✅",
-                    "CHANGES_REQUESTED": "🔄",
-                    "REVIEW_REQUIRED": "👀",
-                }.get(decision, "")
-                decision_str = f" [{decision_emoji} {decision}]"
+            decision_str = f" [{decision}]" if decision else ""
 
             # PR author info
             author_info = ""
@@ -231,7 +215,7 @@ def list_reviews(
                 author_info = f" by @{item.get('pr_author', '')}"
 
             lines.append(
-                f"   {pr_emoji} #{item['pr_number']}: {item['pr_title']}{author_info}{decision_str}"
+                f"  #{item['pr_number']} [{pr_state}] {item['pr_title']}{author_info}{decision_str}"
             )
 
             # Individual reviews
@@ -240,14 +224,7 @@ def list_reviews(
                 state = review.get("state", "unknown")
                 submitted = review.get("submitted_at", "")[:10]
 
-                state_emoji = {
-                    "APPROVED": "✅",
-                    "CHANGES_REQUESTED": "🔄",
-                    "COMMENTED": "💬",
-                    "DISMISSED": "🚫",
-                }.get(state, "👀")
-
                 reviewer_str = f"@{reviewer}" if filter_by == "received" else "You"
-                lines.append(f"      {state_emoji} {reviewer_str}: {state} ({submitted})")
+                lines.append(f"    - {reviewer_str}: {state} ({submitted})")
 
     return "\n".join(lines)

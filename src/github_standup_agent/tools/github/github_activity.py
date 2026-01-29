@@ -87,7 +87,7 @@ def get_activity_summary(
 
         # Format summary
         lines = [
-            "📊 GitHub Activity Summary\n",
+            "GitHub Activity Summary\n",
             f"Total contributions (this year): {calendar.get('totalContributions', 0)}",
             f"Contributions (last {days_back} days): {recent_total}\n",
             "Breakdown (this year):",
@@ -102,8 +102,7 @@ def get_activity_summary(
             for day in recent_days[-7:]:  # Last 7 days max
                 count = day.get("contributionCount", 0)
                 date = day.get("date", "")
-                bar = "█" * min(count, 10)
-                lines.append(f"  {date}: {bar} ({count})")
+                lines.append(f"  {date}: {count} contributions")
 
         return "\n".join(lines)
 

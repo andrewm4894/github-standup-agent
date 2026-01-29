@@ -10,11 +10,7 @@ from github_standup_agent.tools.feedback import (
     capture_feedback_rating,
     capture_feedback_text,
 )
-from github_standup_agent.tools.history import (
-    get_recent_standups,
-    save_standup,
-    save_standup_to_file,
-)
+from github_standup_agent.tools.history import save_standup_to_file
 from github_standup_agent.tools.slack import (
     confirm_slack_publish,
     publish_standup_to_slack,
@@ -24,11 +20,11 @@ from github_standup_agent.tools.slack import (
 COORDINATOR_INSTRUCTIONS = """You coordinate standup generation.
 
 IMPORTANT: You NEVER write standup summaries yourself. You MUST use the tools:
-- Use gather_github_data tool to collect GitHub activity (also fetches Slack standups if configured)
+- Use gather_data tool to collect GitHub activity and Slack standups
 - Use create_standup_summary tool to generate the standup (it has the user's style)
 
 Workflow:
-1. Call gather_github_data to collect GitHub activity
+1. Call gather_data to collect GitHub activity and team standups
 2. Call create_standup_summary with the collected data to create the standup
 3. Return the summary to the user
 
@@ -86,8 +82,8 @@ def create_coordinator_agent(
         tools=[
             # Sub-agents as tools for reliable execution
             data_gatherer.as_tool(
-                tool_name="gather_github_data",
-                tool_description="Gather GitHub activity data (PRs, issues, commits, reviews)",
+                tool_name="gather_data",
+                tool_description="Gather GitHub activity and Slack standups from the team",
             ),
             summarizer.as_tool(
                 tool_name="create_standup_summary",
@@ -95,8 +91,6 @@ def create_coordinator_agent(
             ),
             # Direct tools
             copy_to_clipboard,
-            get_recent_standups,
-            save_standup,
             save_standup_to_file,
             # Slack tools
             publish_standup_to_slack,

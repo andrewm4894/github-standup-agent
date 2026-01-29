@@ -136,15 +136,13 @@ def list_issues(
     }
     lines = [
         f"Found {len(all_issues)} issue(s) {filter_desc[filter_by]} {target_user} "
-        f"across {len(by_repo)} repo(s):\n"
+        f"across {len(by_repo)} repo(s):"
     ]
 
     for repo_name, repo_issues in by_repo.items():
-        lines.append(f"\n📁 {repo_name}:")
+        lines.append(f"\n{repo_name}:")
         for issue in repo_issues:
-            # Status emoji
-            issue_state = issue.get("state", "unknown").lower()
-            emoji = "🔵" if issue_state == "open" else "⚫"
+            issue_state = issue.get("state", "unknown").upper()
 
             # Labels
             labels = issue.get("labels", [])
@@ -155,7 +153,7 @@ def list_issues(
 
             # Comments
             comments = issue.get("commentsCount", 0)
-            comment_str = f" 💬{comments}" if comments else ""
+            comment_str = f" ({comments} comments)" if comments else ""
 
             # Author info (if not filtering by authored)
             author = issue.get("author", {}).get("login", "")
@@ -166,11 +164,10 @@ def list_issues(
             assignee_str = ""
             if assignees and filter_by != "assigned":
                 assignee_names = [a.get("login", "") for a in assignees[:2]]
-                assignee_str = f" → @{', @'.join(assignee_names)}"
+                assignee_str = f" -> @{', @'.join(assignee_names)}"
 
             lines.append(
-                f"   {emoji} #{issue['number']}: {issue['title']}{author_info}{assignee_str}\n"
-                f"      {issue_state}{label_str}{comment_str} | {issue['url']}"
+                f"  #{issue['number']} [{issue_state}] {issue['title']}{author_info}{assignee_str}{label_str}{comment_str}"
             )
 
     return "\n".join(lines)

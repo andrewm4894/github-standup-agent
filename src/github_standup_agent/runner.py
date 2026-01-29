@@ -121,7 +121,6 @@ def _emit_standup_event(standup: str, context: StandupContext, mode: str = "gene
             "has_issues": bool(context.collected_issues),
             "has_commits": bool(context.collected_commits),
             "has_reviews": bool(context.collected_reviews),
-            "with_history": context.with_history,
             "mode": mode,
         },
     )
@@ -158,7 +157,6 @@ def _emit_chat_session_event(
 async def run_standup_generation(
     config: StandupConfig,
     days_back: int = 1,
-    with_history: bool = False,
     github_username: str | None = None,
     stream: bool = False,
     verbose: bool = False,
@@ -169,7 +167,6 @@ async def run_standup_generation(
     Args:
         config: The standup configuration
         days_back: Number of days to look back for activity
-        with_history: Whether to include context from recent standups
         github_username: GitHub username
         stream: Whether to stream output
         verbose: Whether to show verbose output
@@ -188,7 +185,6 @@ async def run_standup_generation(
     context = StandupContext(
         config=config,
         days_back=days_back,
-        with_history=with_history,
         github_username=github_username,
         style_instructions=style_instructions,
     )
@@ -209,10 +205,7 @@ async def run_standup_generation(
     )
 
     # Build the prompt
-    prompt = f"""Generate a standup for the last {days_back} day(s).
-
-{"Include context from recent standups." if with_history else ""}
-"""
+    prompt = f"Generate a standup for the last {days_back} day(s)."
 
     # Create hooks
     run_hooks = StandupRunHooks(verbose=verbose)
@@ -301,7 +294,6 @@ async def run_interactive_chat(
     context = StandupContext(
         config=config,
         days_back=days_back,
-        with_history=True,  # Always use history in chat mode
         github_username=github_username,
         style_instructions=style_instructions,
     )
