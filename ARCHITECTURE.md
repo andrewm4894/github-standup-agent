@@ -40,13 +40,11 @@ flowchart TB
         config_json["config.json"]
         style_md["style.md"]
         examples_md["examples.md"]
-        history_db["standup_history.db"]
         sessions_db["chat_sessions.db"]
     end
 
     generate --> run_standup
     chat --> run_chat
-    history --> history_db
     config --> config_json
 
     run_standup --> coord
@@ -81,7 +79,7 @@ The system uses the **agents-as-tools** pattern — sub-agents are wrapped via `
 flowchart LR
     subgraph Coordinator["Coordinator Agent"]
         direction TB
-        c_tools["Tools:<br/>- gather_github_data<br/>- create_standup_summary<br/>- copy_to_clipboard<br/>- save_standup<br/>- save_standup_to_file<br/>- publish_standup_to_slack<br/>- confirm_slack_publish<br/>- set_slack_thread<br/>- capture_feedback_rating<br/>- capture_feedback_text"]
+        c_tools["Tools:<br/>- gather_github_data<br/>- create_standup_summary<br/>- copy_to_clipboard<br/>- save_standup_to_file<br/>- publish_standup_to_slack<br/>- confirm_slack_publish<br/>- set_slack_thread<br/>- capture_feedback_rating<br/>- capture_feedback_text"]
     end
 
     subgraph DataGatherer["Data Gatherer Agent (as tool)"]
@@ -91,7 +89,7 @@ flowchart LR
 
     subgraph Summarizer["Summarizer Agent (as tool)"]
         direction TB
-        s_tools["Tools:<br/>- get_recent_standups<br/>- save_standup<br/>- copy_to_clipboard"]
+        s_tools["Tools:<br/>- save_standup_to_file<br/>- copy_to_clipboard"]
     end
 
     Coordinator -->|"gather_github_data"| DataGatherer
@@ -153,7 +151,6 @@ sequenceDiagram
 | Config | `./config/config.json` | User preferences (model, channel, etc.) |
 | Style | `./config/style.md` | Detailed standup formatting instructions |
 | Examples | `./config/examples.md` | Few-shot prompting examples |
-| History DB | `.standup-data/standup_history.db` | Generated standups + raw GitHub data |
 | Sessions DB | `.standup-data/chat_sessions.db` | Chat conversation history (SDK managed) |
 | PostHog | Cloud (opt-in) | Usage analytics and agent tracing |
 
@@ -191,8 +188,6 @@ Two-tier pattern: overview/list tools for discovery, detail tools for drill-down
 | Tool | File | Description |
 |------|------|-------------|
 | `copy_to_clipboard` | `clipboard.py` | Copy standup to system clipboard |
-| `get_recent_standups` | `history.py` | Fetch from history DB for context |
-| `save_standup` | `history.py` | Persist to history DB |
 | `save_standup_to_file` | `history.py` | Export to markdown file |
 | `capture_feedback_rating` | `feedback.py` | Capture thumbs up/down + PostHog `$ai_metric` event |
 | `capture_feedback_text` | `feedback.py` | Capture detailed feedback + PostHog `$ai_feedback` event |
@@ -218,7 +213,6 @@ src/github_standup_agent/
 ├── runner.py              # Agent execution (generate/chat modes)
 ├── context.py             # StandupContext dataclass
 ├── config.py              # Configuration loading/saving
-├── db.py                  # SQLite history database
 ├── hooks.py               # Run/Agent hooks for logging
 ├── instrumentation.py     # PostHog integration
 ├── agents/
@@ -252,4 +246,4 @@ src/github_standup_agent/
 2. **Context Passing**: `StandupContext` via `RunContextWrapper` keeps state out of the LLM but accessible to all tools.
 3. **Two-Step Slack Publish**: Preview → confirm → publish prevents accidental posts.
 4. **Style Priority**: `style.md` + `config.json` style + `examples.md` are combined, with file-level config taking precedence.
-5. **Dual Databases**: `standup_history.db` (app-managed standups) and `chat_sessions.db` (SDK-managed conversation persistence).
+5. **Session Persistence**: `chat_sessions.db` (SDK-managed conversation persistence) for resumable chat mode.

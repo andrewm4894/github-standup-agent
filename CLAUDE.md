@@ -48,7 +48,6 @@ Coordinator Agent (gpt-5.2)
 - **`tools/`**: Function tools decorated with `@function_tool` that wrap `gh` CLI and Slack API calls
 - **`guardrails/`**: Input/output validation (e.g., `validate_days_guardrail` limits lookback range)
 - **`hooks.py`**: `RunHooks` and `AgentHooks` for logging/observability
-- **`db.py`**: SQLite persistence for standup history at `.standup-data/standup_history.db`
 
 ### Tool Pattern
 
@@ -279,7 +278,6 @@ make install-all        # Install dev + posthog dependencies
 
 When PostHog is enabled, the following custom events are emitted:
 - `standup_generated` - Emitted after every standup generation with full summary and metadata
-- `standup_saved` - Emitted when the agent explicitly calls the `save_standup` tool
 - `$ai_metric` - Emitted when user provides thumbs up/down feedback (linked via `$ai_trace_id`)
 - `$ai_feedback` - Emitted when user provides detailed text feedback (linked via `$ai_trace_id`)
 

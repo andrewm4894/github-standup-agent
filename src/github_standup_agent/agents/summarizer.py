@@ -5,7 +5,7 @@ from agents import Agent, AgentHooks, ModelSettings
 from github_standup_agent.config import DEFAULT_MODEL
 from github_standup_agent.context import StandupContext
 from github_standup_agent.tools.clipboard import copy_to_clipboard
-from github_standup_agent.tools.history import get_recent_standups, save_standup
+from github_standup_agent.tools.history import save_standup_to_file
 
 SUMMARIZER_INSTRUCTIONS = """You are a standup summary specialist.
 Create daily standup summaries from GitHub activity data.
@@ -57,8 +57,7 @@ def create_summarizer_agent(
         handoff_description="Creates formatted standup summaries from GitHub data",
         instructions=instructions,
         tools=[
-            get_recent_standups,
-            save_standup,
+            save_standup_to_file,
             copy_to_clipboard,
         ],
         model=model,
@@ -75,8 +74,7 @@ summarizer_agent = Agent[StandupContext](
     handoff_description="Creates formatted standup summaries from GitHub data",
     instructions=SUMMARIZER_INSTRUCTIONS,
     tools=[
-        get_recent_standups,
-        save_standup,
+        save_standup_to_file,
         copy_to_clipboard,
     ],
     model=DEFAULT_MODEL,

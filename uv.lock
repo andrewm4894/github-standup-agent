@@ -323,7 +323,7 @@ requires-dist = [
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.0" },
     { name = "openai-agents", specifier = ">=0.0.7" },
     { name = "platformdirs", specifier = ">=4.0.0" },
-    { name = "posthog", marker = "extra == 'posthog'", specifier = ">=7.5.0" },
+    { name = "posthog", marker = "extra == 'posthog'", specifier = ">=7.7.0" },
     { name = "pydantic", specifier = ">=2.0" },
     { name = "pydantic-settings", specifier = ">=2.0" },
     { name = "pyperclip", specifier = ">=1.8.0" },
@@ -760,7 +760,7 @@ wheels = [
 
 [[package]]
 name = "posthog"
-version = "7.5.1"
+version = "7.7.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "backoff" },
@@ -770,9 +770,9 @@ dependencies = [
     { name = "six" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/98/3b/866af11cb12e9d35feffcd480d4ebf31f87b2164926b9c670cbdafabc814/posthog-7.5.1.tar.gz", hash = "sha256:d8a8165b3d47465023ea2f919982a34890e2dda76402ec47d6c68424b2534a55", size = 145244, upload-time = "2026-01-08T21:18:39.266Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/23/dd/ca6d5a79614af27ededc0dca85e77f42f7704e29f8314819d7ce92b9a7f3/posthog-7.7.0.tar.gz", hash = "sha256:b4f2b1a616e099961f6ab61a5a2f88de62082c26801699e556927d21c00737ef", size = 160766, upload-time = "2026-01-27T21:15:41.63Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/1f/03/ba011712ce9d07fe87dcfb72474c388d960e6d0c4f2262d2ae11fd27f0c5/posthog-7.5.1-py3-none-any.whl", hash = "sha256:fd3431ce32c9bbfb1e3775e3633c32ee589c052b0054fafe5ed9e4b17c1969d3", size = 167555, upload-time = "2026-01-08T21:18:37.437Z" },
+    { url = "https://files.pythonhosted.org/packages/41/3f/41b426ed9ab161d630edec84bacb6664ae62b6e63af1165919c7e11c17d1/posthog-7.7.0-py3-none-any.whl", hash = "sha256:955f42097bf147459653b9102e5f7f9a22e4b6fc9f15003447bd1137fafbc505", size = 185353, upload-time = "2026-01-27T21:15:40.051Z" },
 ]
 
 [[package]]

@@ -10,11 +10,7 @@ from github_standup_agent.tools.feedback import (
     capture_feedback_rating,
     capture_feedback_text,
 )
-from github_standup_agent.tools.history import (
-    get_recent_standups,
-    save_standup,
-    save_standup_to_file,
-)
+from github_standup_agent.tools.history import save_standup_to_file
 from github_standup_agent.tools.slack import (
     confirm_slack_publish,
     publish_standup_to_slack,
@@ -95,8 +91,6 @@ def create_coordinator_agent(
             ),
             # Direct tools
             copy_to_clipboard,
-            get_recent_standups,
-            save_standup,
             save_standup_to_file,
             # Slack tools
             publish_standup_to_slack,
