@@ -19,6 +19,7 @@ from github_standup_agent.config import (
 from github_standup_agent.context import StandupContext
 from github_standup_agent.hooks import StandupAgentHooks, StandupRunHooks
 from github_standup_agent.instrumentation import capture_event, setup_posthog, shutdown_posthog
+from github_standup_agent.prompts import compile_prompt
 
 console = Console()
 
@@ -205,7 +206,7 @@ async def run_standup_generation(
     )
 
     # Build the prompt
-    prompt = f"Generate a standup for the last {days_back} day(s)."
+    prompt = compile_prompt("generate-standup", {"days_back": str(days_back)})
 
     # Create hooks
     run_hooks = StandupRunHooks(verbose=verbose)
@@ -384,13 +385,14 @@ async def run_interactive_chat(
             # Build context-aware prompt for first message
             if first_message_in_run:
                 # First message - include setup context
-                prompt = f"""The user wants to generate a standup. Context:
-- GitHub username: {github_username}
-- Days to look back: {days_back}
-- History context is enabled
-
-User request: {user_input}
-"""
+                prompt = compile_prompt(
+                    "chat-context",
+                    {
+                        "github_username": str(github_username),
+                        "days_back": str(days_back),
+                        "user_input": user_input,
+                    },
+                )
                 first_message_in_run = False
             else:
                 prompt = user_input

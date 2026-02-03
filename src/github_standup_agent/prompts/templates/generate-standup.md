@@ -1,0 +1,1 @@
+Generate a standup for the last {{days_back}} day(s).

@@ -6,56 +6,21 @@ from agents import Agent, AgentHooks, ModelSettings, RunContextWrapper
 
 from github_standup_agent.config import DEFAULT_MODEL
 from github_standup_agent.context import StandupContext
+from github_standup_agent.prompts import compile_prompt, get_prompt
 from github_standup_agent.tools.clipboard import copy_to_clipboard
 from github_standup_agent.tools.history import save_standup_to_file
 from github_standup_agent.tools.slack import get_team_slack_standups
 
-SUMMARIZER_INSTRUCTIONS = """You are a standup summary specialist.
-Create daily standup summaries from GitHub activity data.
-
-CRITICAL FIRST STEP:
-Before writing ANY standup, call get_team_slack_standups to fetch recent team standups.
-Study the EXACT format your teammates use - headers, link style, sections, tone.
-Your output MUST match their format precisely.
-
-Core principles:
-- Be concise - standups should be quick to read
-- Focus on the most important/impactful work
-- Write naturally, like a human would
-- Copy the EXACT format from team Slack standups (headers like "Did:" not "## Did")
-- Use Slack mrkdwn links: <https://github.com/org/repo/pull/123|pr> NOT markdown links
-- Only include sections that teammates use (usually just "Did:" and "Will Do:")
-
-When refining a standup based on user feedback, adjust accordingly.
-"""
-
 
 def _build_base_instructions(custom_style: str | None = None) -> str:
     """Build the base instructions with optional custom style (static string)."""
+    base = get_prompt("summarizer-instructions")
     if not custom_style:
-        return SUMMARIZER_INSTRUCTIONS
+        return base
 
     # When examples/style are provided, they take priority
-    return f"""{SUMMARIZER_INSTRUCTIONS}
-
----
-CRITICAL FORMATTING REQUIREMENTS - YOU MUST FOLLOW THESE EXACTLY:
-
-STEP 1: Call get_team_slack_standups first to see how teammates format their standups.
-STEP 2: Copy their EXACT format - same headers, same link style, same sections.
-
-The user has also provided style preferences and/or examples below.
-You MUST:
-1. Use the EXACT section headers (e.g., "Did:" and "Will Do:" NOT "## Did" or "**Did:**")
-2. Use Slack mrkdwn links: <https://github.com/org/repo/pull/123|pr> NOT markdown `[text](url)`
-3. Match the tone, bullet style, and level of detail from examples and team standups
-4. Skip sections that examples don't include (e.g., no "Blockers" section)
-
-Do NOT use markdown headers (##, ###) or bold (**text**).
-Do NOT use repo#number format - use short labels like "pr" or "issue" in links.
-
-{custom_style}
-"""
+    custom_block = compile_prompt("summarizer-custom-style", {"custom_style": custom_style})
+    return base + custom_block
 
 
 def _make_dynamic_instructions(
@@ -67,6 +32,8 @@ def _make_dynamic_instructions(
     Summarizer always sees the latest standup text for refinement.
     """
     base = _build_base_instructions(custom_style)
+    # Pre-load the template once at creation time
+    standup_template = get_prompt("summarizer-current-standup")
 
     def _dynamic_instructions(
         ctx: RunContextWrapper[StandupContext], agent: Agent[StandupContext]
@@ -74,12 +41,10 @@ def _make_dynamic_instructions(
         current = ctx.context.current_standup
         if not current:
             return base
-        return f"""{base}
+        from github_standup_agent.prompts import PromptManager
 
----
-CURRENT STANDUP (apply refinements to this):
-{current}
-"""
+        suffix = PromptManager().compile(standup_template, {"current_standup": current})
+        return base + suffix
 
     return _dynamic_instructions
 
