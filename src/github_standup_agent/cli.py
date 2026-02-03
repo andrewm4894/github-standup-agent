@@ -177,6 +177,11 @@ def chat(
             '  • "ignore the docs PR" - Exclude specific items\n'
             '  • "copy to clipboard" - Copy final version\n'
             '  • "exit" or "quit" - End session\n\n'
+            "Task tracking:\n"
+            '  • "working on the auth refactor" - Log a task\n'
+            '  • "auth refactor - tests passing" - Add progress note\n'
+            '  • "finished the auth refactor" - Complete a task\n'
+            '  • "what am I working on?" - Show tasks\n\n'
             "[dim]Session is automatically saved for later resumption.[/dim]",
             title="Welcome",
             border_style="blue",
@@ -240,6 +245,49 @@ def sessions(
 
         console.print("\n[dim]Resume with: standup chat --resume[/dim]")
         console.print("[dim]Or use a named session: standup chat --session <name>[/dim]")
+
+
+@app.command()
+def tasks(
+    list_all: Annotated[
+        bool,
+        typer.Option("--list", "-l", help="List recent tasks."),
+    ] = False,
+    clear: Annotated[
+        bool,
+        typer.Option("--clear", help="Clear all tasks."),
+    ] = False,
+) -> None:
+    """Manage tracked tasks / work log."""
+    from github_standup_agent.tools.tasks.task_store import clear_all_tasks, list_tasks
+
+    if clear:
+        if typer.confirm("Are you sure you want to clear all tasks?"):
+            count = clear_all_tasks()
+            console.print(f"[green]Cleared {count} task(s).[/green]")
+        return
+
+    # Default to listing tasks
+    if list_all or not clear:
+        task_list = list_tasks()
+        if not task_list:
+            console.print("[dim]No tasks logged yet.[/dim]")
+            console.print('[dim]Log tasks in chat mode: standup chat → "working on X"[/dim]')
+            return
+
+        console.print("[bold]Tasks:[/bold]\n")
+        for t in task_list:
+            status_icon = {
+                "in_progress": "[yellow]●[/yellow]",
+                "completed": "[green]✓[/green]",
+                "abandoned": "[dim]✗[/dim]",
+            }
+            icon = status_icon.get(t["status"], "?")
+            tags_str = f" [{', '.join(t.get('tags', []))}]" if t.get("tags") else ""
+            console.print(f"  {icon} {t['title']}{tags_str}  [dim](id: {t['id']})[/dim]")
+            console.print(f"    [dim]Status: {t['status']} | Updated: {t['updated_at']}[/dim]")
+
+        console.print()
 
 
 @app.command()

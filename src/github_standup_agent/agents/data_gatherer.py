@@ -17,20 +17,26 @@ from github_standup_agent.tools.github import (
     list_reviews,
 )
 from github_standup_agent.tools.slack import get_team_slack_standups
+from github_standup_agent.tools.tasks import get_todays_work_log
 
 DATA_GATHERER_INSTRUCTIONS = """You are a GitHub data gathering specialist. Your job is to collect
 comprehensive information about a user's GitHub activity and team context.
 
 RECOMMENDED APPROACH:
-1. Start with get_activity_feed() - chronological list of all your GitHub activity
-2. Call get_team_slack_standups() - get team context from recent standups (IMPORTANT for context)
-3. Use list tools for more detail on specific categories (PRs, issues, reviews, commits, comments)
-4. Use detail tools (get_pr_details, get_issue_details) to drill into specific items when needed
+1. Start with get_todays_work_log() - HIGH-SIGNAL user-provided context about what they worked on
+2. Call get_activity_feed() - chronological list of all your GitHub activity
+3. Call get_team_slack_standups() - get team context from recent standups (IMPORTANT for context)
+4. Use list tools for more detail on specific categories (PRs, issues, reviews, commits, comments)
+5. Use detail tools (get_pr_details, get_issue_details) to drill into specific items when needed
 
 AVAILABLE TOOLS:
 
+Work log (HIGH-SIGNAL - call this FIRST):
+- get_todays_work_log: User-logged tasks and progress notes. This is PRIMARY context when available.
+  These are tasks the user explicitly told us about, so they are the highest-signal data.
+
 Overview tools:
-- get_activity_feed: Complete chronological feed of all GitHub activity (START HERE)
+- get_activity_feed: Complete chronological feed of all GitHub activity
 - get_activity_summary: Aggregate contribution statistics
 
 Team context (ALWAYS call this if Slack is configured):
@@ -88,6 +94,8 @@ def create_data_gatherer_agent(
         handoff_description="Gathers GitHub activity data (PRs, issues, commits, reviews)",
         instructions=DATA_GATHERER_INSTRUCTIONS,
         tools=[
+            # Work log (high-signal user context)
+            get_todays_work_log,
             # Overview tools
             get_activity_feed,
             get_activity_summary,

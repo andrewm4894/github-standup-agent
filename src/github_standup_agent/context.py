@@ -26,6 +26,8 @@ class StandupContext:
     collected_commits: list[dict[str, Any]] = field(default_factory=list)
     collected_reviews: list[dict[str, Any]] = field(default_factory=list)
     collected_activity_feed: list[dict[str, Any]] = field(default_factory=list)
+    collected_tasks: list[dict[str, Any]] = field(default_factory=list)
+    collected_task_updates: list[dict[str, Any]] = field(default_factory=list)
 
     # Detail caches (populated by get_pr_details, get_issue_details)
     # Keys are "repo#number" format, e.g., "owner/repo#123"

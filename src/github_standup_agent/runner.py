@@ -19,6 +19,7 @@ from github_standup_agent.config import (
 from github_standup_agent.context import StandupContext
 from github_standup_agent.hooks import StandupAgentHooks, StandupRunHooks
 from github_standup_agent.instrumentation import capture_event, setup_posthog, shutdown_posthog
+from github_standup_agent.tools.tasks.task_store import get_tasks_for_standup
 
 console = Console()
 
@@ -121,6 +122,8 @@ def _emit_standup_event(standup: str, context: StandupContext, mode: str = "gene
             "has_issues": bool(context.collected_issues),
             "has_commits": bool(context.collected_commits),
             "has_reviews": bool(context.collected_reviews),
+            "has_tasks": bool(context.collected_tasks),
+            "task_count": len(context.collected_tasks),
             "mode": mode,
         },
     )
@@ -188,6 +191,13 @@ async def run_standup_generation(
         github_username=github_username,
         style_instructions=style_instructions,
     )
+
+    # Pre-load tasks into context
+    try:
+        tasks = get_tasks_for_standup(username=github_username, days_back=days_back)
+        context.collected_tasks = tasks
+    except Exception:
+        pass  # Tasks DB may not exist yet
 
     # Initialize PostHog instrumentation (if configured)
     setup_posthog(distinct_id=github_username)
@@ -384,10 +394,11 @@ async def run_interactive_chat(
             # Build context-aware prompt for first message
             if first_message_in_run:
                 # First message - include setup context
-                prompt = f"""The user wants to generate a standup. Context:
+                prompt = f"""The user wants to generate a standup or track tasks. Context:
 - GitHub username: {github_username}
 - Days to look back: {days_back}
 - History context is enabled
+- Task tracking is available (log_task, update_task, complete_task, list_my_tasks)
 
 User request: {user_input}
 """

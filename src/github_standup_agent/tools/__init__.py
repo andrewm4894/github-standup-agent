@@ -23,6 +23,14 @@ from github_standup_agent.tools.slack import (
     get_team_slack_standups,
     publish_standup_to_slack,
 )
+from github_standup_agent.tools.tasks import (
+    complete_task,
+    get_todays_work_log,
+    link_task,
+    list_my_tasks,
+    log_task,
+    update_task,
+)
 
 __all__ = [
     # GitHub tools - overview
@@ -49,4 +57,11 @@ __all__ = [
     # Feedback tools
     "capture_feedback_rating",
     "capture_feedback_text",
+    # Task tracking tools
+    "log_task",
+    "update_task",
+    "complete_task",
+    "list_my_tasks",
+    "get_todays_work_log",
+    "link_task",
 ]

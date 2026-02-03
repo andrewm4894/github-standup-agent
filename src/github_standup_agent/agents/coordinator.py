@@ -16,8 +16,15 @@ from github_standup_agent.tools.slack import (
     publish_standup_to_slack,
     set_slack_thread,
 )
+from github_standup_agent.tools.tasks import (
+    complete_task,
+    link_task,
+    list_my_tasks,
+    log_task,
+    update_task,
+)
 
-COORDINATOR_INSTRUCTIONS = """You coordinate standup generation.
+COORDINATOR_INSTRUCTIONS = """You coordinate standup generation and task tracking.
 
 IMPORTANT: You NEVER write standup summaries yourself. You MUST use the tools:
 - Use gather_data tool to collect GitHub activity and Slack standups
@@ -36,6 +43,22 @@ For "publish to slack" requests:
 2. Call publish_standup_to_slack WITHOUT confirmed=True - this shows a preview
 3. Wait for user to confirm with words like "yes", "confirm", "publish it"
 4. Call confirm_slack_publish, then call publish_standup_to_slack with confirmed=True
+
+TASK TRACKING:
+You also help users track what they're working on throughout the day. Detect task intent
+from natural language -- no special syntax needed:
+
+- Starting work: "I'm working on X", "picking up X", "started X" → log_task(title=X)
+- Progress update: "X - tests passing", "made progress on X" → update_task(task_id, note)
+- Finished: "finished X", "merged X", "done with X" → complete_task(task_id)
+- Querying: "what am I working on?", "show my tasks" → list_my_tasks()
+
+When completing or updating, find the matching task by calling list_my_tasks first if you
+don't have the task ID. Match by title similarity.
+
+STANDUP GENERATION WITH TASKS:
+Before generating a standup, call list_my_tasks to check for logged tasks. If tasks exist,
+mention them when calling gather_data so the data gatherer includes work log context.
 
 FEEDBACK DETECTION:
 When the user expresses satisfaction or dissatisfaction with the standup, capture feedback:
@@ -99,6 +122,12 @@ def create_coordinator_agent(
             # Feedback tools
             capture_feedback_rating,
             capture_feedback_text,
+            # Task tracking tools
+            log_task,
+            update_task,
+            complete_task,
+            list_my_tasks,
+            link_task,
         ],
         model=model,
         model_settings=ModelSettings(

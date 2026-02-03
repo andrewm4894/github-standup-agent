@@ -30,6 +30,7 @@ DATA_DIR = Path(
     os.environ.get("STANDUP_DATA_DIR", user_data_dir("github-standup-agent", appauthor=False))
 )
 SESSIONS_DB_FILE = DATA_DIR / "chat_sessions.db"
+TASKS_DB_FILE = DATA_DIR / "tasks.db"
 
 
 class StandupConfig(BaseSettings):
