@@ -89,7 +89,7 @@ flowchart LR
 
     subgraph Summarizer["Summarizer Agent (as tool)"]
         direction TB
-        s_tools["Tools:<br/>- save_standup_to_file<br/>- copy_to_clipboard"]
+        s_tools["Tools:<br/>- get_team_slack_standups<br/>- save_standup_to_file<br/>- copy_to_clipboard"]
     end
 
     Coordinator -->|"gather_data"| DataGatherer
@@ -100,7 +100,7 @@ flowchart LR
 |-------|-------|------|------|
 | **Coordinator** | gpt-5.2 | 0.5 | Orchestrates workflow, handles user commands (copy, save, publish) |
 | **Data Gatherer** | gpt-5.2 | 0.3 | Collects GitHub activity via `gh` CLI, optionally fetches Slack standups |
-| **Summarizer** | gpt-5.2 | 0.7 | Creates formatted standup summaries using style/example preferences |
+| **Summarizer** | gpt-5.2 | 0.7 | Creates formatted standup summaries using style/example preferences. Uses dynamic instructions (callable) to inject `current_standup` from shared context on each invocation, ensuring the standup text is never lost during refinement iterations. |
 
 ## Data Flow (Generate Mode)
 
@@ -245,5 +245,6 @@ src/github_standup_agent/
 1. **Agents-as-Tools**: Sub-agents invoked as tools (not handoffs) for more reliable, predictable execution flow.
 2. **Context Passing**: `StandupContext` via `RunContextWrapper` keeps state out of the LLM but accessible to all tools.
 3. **Two-Step Slack Publish**: Preview → confirm → publish prevents accidental posts.
-4. **Style Priority**: `style.md` + `config.json` style + `examples.md` are combined, with file-level config taking precedence.
-5. **Session Persistence**: `chat_sessions.db` (SDK-managed conversation persistence) for resumable chat mode.
+4. **Dynamic Summarizer Instructions**: The Summarizer's `instructions` is a callable `(ctx, agent) -> str` that appends `current_standup` from shared context on each invocation. This ensures the standup text survives `as_tool()` boundaries (which start with a fresh context window).
+5. **Style Priority**: `style.md` + `config.json` style + `examples.md` are combined, with file-level config taking precedence.
+6. **Session Persistence**: `chat_sessions.db` (SDK-managed conversation persistence) for resumable chat mode.

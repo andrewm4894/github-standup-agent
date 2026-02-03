@@ -29,12 +29,13 @@ This is a multi-agent system built with the OpenAI Agents SDK (`openai-agents`) 
 ```
 Coordinator Agent (gpt-5.2)
     │
-    ├── handoff to → Data Gatherer Agent (gpt-5.2)
-    │                   └── uses gh CLI tools to collect PRs, issues, commits, reviews
-    │                   └── optionally fetches team standups from Slack
+    ├── as_tool() → Data Gatherer Agent (gpt-5.2)
+    │                  └── uses gh CLI tools to collect PRs, issues, commits, reviews
+    │                  └── optionally fetches team standups from Slack
     │
-    └── handoff to → Summarizer Agent (gpt-5.2)
-                        └── creates formatted standup, can save/copy/publish to Slack
+    └── as_tool() → Summarizer Agent (gpt-5.2)
+                       └── creates formatted standup, can save/copy/publish to Slack
+                       └── uses dynamic instructions to retain current standup during refinement
 ```
 
 ### Key Components
@@ -44,7 +45,7 @@ Coordinator Agent (gpt-5.2)
 - **`agents/`**: Three agents with different responsibilities:
   - `coordinator.py`: Orchestrates workflow, handles commands like copy/save
   - `data_gatherer.py`: Collects GitHub data using function tools
-  - `summarizer.py`: Creates summaries, supports structured output via `StandupSummary` Pydantic model
+  - `summarizer.py`: Creates summaries using dynamic instructions (callable) that inject `current_standup` from shared context for reliable refinement
 - **`tools/`**: Function tools decorated with `@function_tool` that wrap `gh` CLI and Slack API calls
 - **`guardrails/`**: Input/output validation (e.g., `validate_days_guardrail` limits lookback range)
 - **`hooks.py`**: `RunHooks` and `AgentHooks` for logging/observability
