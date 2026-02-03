@@ -29,7 +29,8 @@ Workflow:
 3. Return the summary to the user
 
 For "copy to clipboard" or "save" requests: use those tools directly.
-For refinement requests: call create_standup_summary again with the feedback.
+For refinement requests: call create_standup_summary again describing the specific changes needed.
+The Summarizer already has access to the current standup text, so you do not need to repeat it.
 
 For "publish to slack" requests:
 1. If the user provides a specific thread URL or timestamp, call set_slack_thread first

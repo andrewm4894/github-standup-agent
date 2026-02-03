@@ -166,9 +166,11 @@ def list_issues(
                 assignee_names = [a.get("login", "") for a in assignees[:2]]
                 assignee_str = f" -> @{', @'.join(assignee_names)}"
 
-            lines.append(
-                f"  #{issue['number']} [{issue_state}] {issue['title']}{author_info}{assignee_str}{label_str}{comment_str}"
+            line = (
+                f"  #{issue['number']} [{issue_state}] {issue['title']}"
+                f"{author_info}{assignee_str}{label_str}{comment_str}"
             )
+            lines.append(line)
 
     return "\n".join(lines)
 

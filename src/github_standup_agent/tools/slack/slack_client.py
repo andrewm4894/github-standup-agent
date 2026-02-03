@@ -147,14 +147,11 @@ def get_user_display_name(client: WebClient, user_id: str) -> str:
     try:
         result = client.users_info(user=user_id)
         _users_read_available = True
-        user = result.get("user", {})
+        user: dict[str, Any] = result.get("user", {})
         profile = user.get("profile", {})
         # Prefer display_name, fall back to real_name, then user ID
         name = (
-            profile.get("display_name")
-            or profile.get("real_name")
-            or user.get("name")
-            or user_id
+            profile.get("display_name") or profile.get("real_name") or user.get("name") or user_id
         )
         _user_name_cache[user_id] = name
         return name

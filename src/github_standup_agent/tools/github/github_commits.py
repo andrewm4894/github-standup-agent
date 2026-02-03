@@ -85,9 +85,7 @@ def list_commits(
             by_repo[repo_name].append(commit)
 
         # Format output
-        lines = [
-            f"Found {len(commits)} commit(s) by {target_user} across {len(by_repo)} repo(s):"
-        ]
+        lines = [f"Found {len(commits)} commit(s) by {target_user} across {len(by_repo)} repo(s):"]
 
         for repo_name, repo_commits in by_repo.items():
             lines.append(f"\n{repo_name}:")

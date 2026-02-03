@@ -1,6 +1,8 @@
 """Summarizer Agent - generates standup summaries from collected data."""
 
-from agents import Agent, AgentHooks, ModelSettings
+from collections.abc import Callable
+
+from agents import Agent, AgentHooks, ModelSettings, RunContextWrapper
 
 from github_standup_agent.config import DEFAULT_MODEL
 from github_standup_agent.context import StandupContext
@@ -28,8 +30,8 @@ When refining a standup based on user feedback, adjust accordingly.
 """
 
 
-def _build_instructions(custom_style: str | None = None) -> str:
-    """Build the full instructions with optional custom style."""
+def _build_base_instructions(custom_style: str | None = None) -> str:
+    """Build the base instructions with optional custom style (static string)."""
     if not custom_style:
         return SUMMARIZER_INSTRUCTIONS
 
@@ -44,7 +46,7 @@ STEP 2: Copy their EXACT format - same headers, same link style, same sections.
 
 The user has also provided style preferences and/or examples below.
 You MUST:
-1. Use the EXACT section headers (e.g., "Did:" and "Will Do:" NOT "## Did" or "### Did" or "**Did:**")
+1. Use the EXACT section headers (e.g., "Did:" and "Will Do:" NOT "## Did" or "**Did:**")
 2. Use Slack mrkdwn links: <https://github.com/org/repo/pull/123|pr> NOT markdown `[text](url)`
 3. Match the tone, bullet style, and level of detail from examples and team standups
 4. Skip sections that examples don't include (e.g., no "Blockers" section)
@@ -54,6 +56,32 @@ Do NOT use repo#number format - use short labels like "pr" or "issue" in links.
 
 {custom_style}
 """
+
+
+def _make_dynamic_instructions(
+    custom_style: str | None = None,
+) -> Callable[[RunContextWrapper[StandupContext], Agent[StandupContext]], str]:
+    """Return a callable that builds instructions with current standup context.
+
+    The OpenAI Agents SDK calls this each time the agent runs, so the
+    Summarizer always sees the latest standup text for refinement.
+    """
+    base = _build_base_instructions(custom_style)
+
+    def _dynamic_instructions(
+        ctx: RunContextWrapper[StandupContext], agent: Agent[StandupContext]
+    ) -> str:
+        current = ctx.context.current_standup
+        if not current:
+            return base
+        return f"""{base}
+
+---
+CURRENT STANDUP (apply refinements to this):
+{current}
+"""
+
+    return _dynamic_instructions
 
 
 def create_summarizer_agent(
@@ -68,7 +96,7 @@ def create_summarizer_agent(
         hooks: Optional agent hooks for logging/observability
         style_instructions: Optional custom style instructions from user config/file
     """
-    instructions = _build_instructions(style_instructions)
+    instructions = _make_dynamic_instructions(style_instructions)
 
     return Agent[StandupContext](
         name="Summarizer",
@@ -91,7 +119,7 @@ def create_summarizer_agent(
 summarizer_agent = Agent[StandupContext](
     name="Summarizer",
     handoff_description="Creates formatted standup summaries from GitHub data",
-    instructions=SUMMARIZER_INSTRUCTIONS,
+    instructions=_make_dynamic_instructions(),
     tools=[
         get_team_slack_standups,
         save_standup_to_file,

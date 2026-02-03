@@ -36,7 +36,8 @@ Overview tools:
 Team context (ALWAYS call this if Slack is configured):
 - get_team_slack_standups: Recent team standups from Slack showing what teammates are working on
   This provides valuable context about team priorities, blockers, and collaboration opportunities.
-  IMPORTANT: Add 3 extra days to days_back for better context (e.g., if days_back=1, use days_back=4)
+  IMPORTANT: Add 3 extra days to days_back for better context
+  (e.g., if days_back=1, use days_back=4)
 
 List tools (with date filters):
 - list_prs: PRs with filter_by options: authored, reviewed, assigned, involves, review-requested

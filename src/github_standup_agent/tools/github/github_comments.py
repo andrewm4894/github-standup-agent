@@ -97,7 +97,9 @@ def list_comments(
                     "api",
                     f"/repos/{repo_name}/issues/{issue_number}/comments",
                     "--jq",
-                    f'[.[] | select(.user.login == "{target_user}") | {{body: .body, created_at: .created_at, url: .html_url}}]',
+                    '[.[] | select(.user.login == "'
+                    + target_user
+                    + '") | {body: .body, created_at: .created_at, url: .html_url}]',
                 ],
                 capture_output=True,
                 text=True,
@@ -112,9 +114,7 @@ def list_comments(
                     created_at = comment.get("created_at", "")
                     if created_at:
                         try:
-                            comment_dt = datetime.fromisoformat(
-                                created_at.replace("Z", "+00:00")
-                            )
+                            comment_dt = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
                             if comment_dt.replace(tzinfo=None) < cutoff_dt:
                                 continue
                         except ValueError:
@@ -160,7 +160,7 @@ def list_comments(
         # Group by issue within repo
         by_issue: dict[int, list[dict[str, Any]]] = {}
         for comment in repo_comments:
-            issue_num = comment.get("issue_number")
+            issue_num: int = comment.get("issue_number", 0)
             if issue_num not in by_issue:
                 by_issue[issue_num] = []
             by_issue[issue_num].append(comment)

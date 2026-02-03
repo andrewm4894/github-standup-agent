@@ -92,7 +92,11 @@ def get_team_slack_standups(
                 for reply in replies:
                     user_id = reply.get("user", "unknown")
                     # Resolve user ID to display name
-                    user_name = get_user_display_name(client, user_id) if user_id != "unknown" else "unknown"
+                    user_name = (
+                        get_user_display_name(client, user_id)
+                        if user_id != "unknown"
+                        else "unknown"
+                    )
                     thread_data["replies"].append(
                         {
                             "user_id": user_id,
