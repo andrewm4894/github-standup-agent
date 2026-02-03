@@ -2,12 +2,74 @@
 
 import json
 import subprocess
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta
 from typing import Annotated, Any
 
 from agents import RunContextWrapper, function_tool
 
 from github_standup_agent.context import StandupContext
+
+
+def _fetch_comments_for_issue(
+    issue: dict[str, Any], target_user: str, cutoff_dt: datetime
+) -> list[dict[str, Any]]:
+    """Fetch comments for a single issue/PR. Returns a list of comment dicts."""
+    repo_name = issue.get("repository", {}).get("nameWithOwner", "")
+    issue_number = issue.get("number")
+
+    if not repo_name or not issue_number:
+        return []
+
+    try:
+        comments_result = subprocess.run(
+            [
+                "gh",
+                "api",
+                f"/repos/{repo_name}/issues/{issue_number}/comments",
+                "--jq",
+                '[.[] | select(.user.login == "'
+                + target_user
+                + '") | {body: .body, created_at: .created_at, url: .html_url}]',
+            ],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+
+        if comments_result.returncode != 0 or not comments_result.stdout.strip():
+            return []
+
+        comments = json.loads(comments_result.stdout)
+        results: list[dict[str, Any]] = []
+
+        for comment in comments:
+            created_at = comment.get("created_at", "")
+            if created_at:
+                try:
+                    comment_dt = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
+                    if comment_dt.replace(tzinfo=None) < cutoff_dt:
+                        continue
+                except ValueError:
+                    pass
+
+            results.append(
+                {
+                    "repo": repo_name,
+                    "issue_number": issue_number,
+                    "issue_title": issue.get("title", ""),
+                    "issue_state": issue.get("state", ""),
+                    "issue_url": issue.get("url", ""),
+                    "body": comment.get("body", ""),
+                    "created_at": created_at,
+                    "url": comment.get("url", ""),
+                }
+            )
+
+        return results
+
+    except (subprocess.TimeoutExpired, json.JSONDecodeError):
+        return []
 
 
 @function_tool
@@ -82,60 +144,13 @@ def list_comments(
     all_comments: list[dict[str, Any]] = []
     cutoff_dt = datetime.now() - timedelta(days=days_back)
 
-    for issue in issues:
-        repo_name = issue.get("repository", {}).get("nameWithOwner", "")
-        issue_number = issue.get("number")
-
-        if not repo_name or not issue_number:
-            continue
-
-        try:
-            # Fetch comments for this issue/PR
-            comments_result = subprocess.run(
-                [
-                    "gh",
-                    "api",
-                    f"/repos/{repo_name}/issues/{issue_number}/comments",
-                    "--jq",
-                    '[.[] | select(.user.login == "'
-                    + target_user
-                    + '") | {body: .body, created_at: .created_at, url: .html_url}]',
-                ],
-                capture_output=True,
-                text=True,
-                timeout=30,
-            )
-
-            if comments_result.returncode == 0 and comments_result.stdout.strip():
-                comments = json.loads(comments_result.stdout)
-
-                # Filter by date and add context
-                for comment in comments:
-                    created_at = comment.get("created_at", "")
-                    if created_at:
-                        try:
-                            comment_dt = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
-                            if comment_dt.replace(tzinfo=None) < cutoff_dt:
-                                continue
-                        except ValueError:
-                            pass
-
-                    all_comments.append(
-                        {
-                            "repo": repo_name,
-                            "issue_number": issue_number,
-                            "issue_title": issue.get("title", ""),
-                            "issue_state": issue.get("state", ""),
-                            "issue_url": issue.get("url", ""),
-                            "body": comment.get("body", ""),
-                            "created_at": created_at,
-                            "url": comment.get("url", ""),
-                        }
-                    )
-
-        except (subprocess.TimeoutExpired, json.JSONDecodeError):
-            # Skip this issue if we can't fetch comments
-            continue
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        futures = {
+            executor.submit(_fetch_comments_for_issue, issue, target_user, cutoff_dt): issue
+            for issue in issues
+        }
+        for future in as_completed(futures):
+            all_comments.extend(future.result())
 
     if not all_comments:
         return f"No comments found for {target_user} in the last {days_back} day(s)."

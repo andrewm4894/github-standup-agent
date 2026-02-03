@@ -2,12 +2,95 @@
 
 import json
 import subprocess
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta
 from typing import Annotated, Any, Literal
 
 from agents import RunContextWrapper, function_tool
 
 from github_standup_agent.context import StandupContext
+
+
+def _fetch_review_for_pr(
+    pr: dict[str, Any], filter_by: str, target_user: str
+) -> dict[str, Any] | None:
+    """Fetch review data for a single PR. Returns a review dict or None."""
+    repo_name = pr.get("repository", {}).get("nameWithOwner", "")
+    pr_number = pr.get("number")
+
+    if not repo_name or not pr_number:
+        return None
+
+    try:
+        review_result = subprocess.run(
+            [
+                "gh",
+                "pr",
+                "view",
+                str(pr_number),
+                "--repo",
+                repo_name,
+                "--json",
+                "reviews,reviewDecision",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+
+        if review_result.returncode != 0 or not review_result.stdout.strip():
+            return None
+
+        review_data = json.loads(review_result.stdout)
+        reviews = review_data.get("reviews", [])
+        review_decision = review_data.get("reviewDecision")
+
+        # Filter reviews based on mode
+        if filter_by == "given":
+            # Only include reviews from the target user
+            user_reviews = [
+                r
+                for r in reviews
+                if r.get("author", {}).get("login", "").lower() == target_user.lower()
+            ]
+            # Exclude self-reviews
+            pr_author = pr.get("author", {}).get("login", "")
+            if pr_author.lower() == target_user.lower():
+                return None
+        else:  # received
+            # All reviews from others
+            user_reviews = [
+                r
+                for r in reviews
+                if r.get("author", {}).get("login", "").lower() != target_user.lower()
+            ]
+
+        if not user_reviews:
+            return None
+
+        return {
+            "pr_number": pr_number,
+            "pr_title": pr.get("title", ""),
+            "pr_url": pr.get("url", ""),
+            "pr_state": pr.get("state", ""),
+            "repo": repo_name,
+            "pr_author": (
+                pr.get("author", {}).get("login", "") if filter_by == "given" else target_user
+            ),
+            "review_decision": review_decision,
+            "reviews": [
+                {
+                    "reviewer": r.get("author", {}).get("login", "unknown"),
+                    "state": r.get("state", "unknown"),
+                    "submitted_at": r.get("submittedAt", ""),
+                    "body_preview": (r.get("body", "") or "")[:100],
+                }
+                for r in user_reviews
+            ],
+        }
+
+    except (subprocess.TimeoutExpired, json.JSONDecodeError):
+        return None
 
 
 @function_tool
@@ -99,86 +182,15 @@ def list_reviews(
     if not prs:
         return f"No PRs found with reviews ({filter_by}) in the last {days_back} days."
 
-    # Step 2: Fetch actual review data for each PR
-    for pr in prs:
-        repo_name = pr.get("repository", {}).get("nameWithOwner", "")
-        pr_number = pr.get("number")
-
-        if not repo_name or not pr_number:
-            continue
-
-        try:
-            # Fetch reviews for this PR
-            review_result = subprocess.run(
-                [
-                    "gh",
-                    "pr",
-                    "view",
-                    str(pr_number),
-                    "--repo",
-                    repo_name,
-                    "--json",
-                    "reviews,reviewDecision",
-                ],
-                capture_output=True,
-                text=True,
-                timeout=30,
-            )
-
-            if review_result.returncode == 0 and review_result.stdout.strip():
-                review_data = json.loads(review_result.stdout)
-                reviews = review_data.get("reviews", [])
-                review_decision = review_data.get("reviewDecision")
-
-                # Filter reviews based on mode
-                if filter_by == "given":
-                    # Only include reviews from the target user
-                    user_reviews = [
-                        r
-                        for r in reviews
-                        if r.get("author", {}).get("login", "").lower() == target_user.lower()
-                    ]
-                    # Exclude self-reviews
-                    pr_author = pr.get("author", {}).get("login", "")
-                    if pr_author.lower() == target_user.lower():
-                        continue
-                else:  # received
-                    # All reviews from others
-                    user_reviews = [
-                        r
-                        for r in reviews
-                        if r.get("author", {}).get("login", "").lower() != target_user.lower()
-                    ]
-
-                if user_reviews:
-                    all_reviews.append(
-                        {
-                            "pr_number": pr_number,
-                            "pr_title": pr.get("title", ""),
-                            "pr_url": pr.get("url", ""),
-                            "pr_state": pr.get("state", ""),
-                            "repo": repo_name,
-                            "pr_author": (
-                                pr.get("author", {}).get("login", "")
-                                if filter_by == "given"
-                                else target_user
-                            ),
-                            "review_decision": review_decision,
-                            "reviews": [
-                                {
-                                    "reviewer": r.get("author", {}).get("login", "unknown"),
-                                    "state": r.get("state", "unknown"),
-                                    "submitted_at": r.get("submittedAt", ""),
-                                    "body_preview": (r.get("body", "") or "")[:100],
-                                }
-                                for r in user_reviews
-                            ],
-                        }
-                    )
-
-        except (subprocess.TimeoutExpired, json.JSONDecodeError):
-            # Skip this PR if we can't fetch reviews
-            continue
+    # Step 2: Fetch actual review data for each PR (in parallel)
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        futures = {
+            executor.submit(_fetch_review_for_pr, pr, filter_by, target_user): pr for pr in prs
+        }
+        for future in as_completed(futures):
+            result_item = future.result()
+            if result_item is not None:
+                all_reviews.append(result_item)
 
     # Store in context
     ctx.context.collected_reviews = all_reviews
