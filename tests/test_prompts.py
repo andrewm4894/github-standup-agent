@@ -22,17 +22,15 @@ class TestPromptManager:
 
     def test_get_existing_template(self) -> None:
         """Can load a known template file."""
-        result = get_prompt("coordinator-instructions")
-        assert "coordinate standup generation" in result
+        result = get_prompt("standup-agent-instructions")
+        assert "standup summaries" in result
 
     def test_get_all_templates(self) -> None:
         """All expected templates load without error."""
         names = [
-            "coordinator-instructions",
-            "data-gatherer-instructions",
-            "summarizer-instructions",
-            "summarizer-custom-style",
-            "summarizer-current-standup",
+            "standup-agent-instructions",
+            "custom-style",
+            "current-standup",
             "generate-standup",
             "chat-context",
         ]
@@ -63,16 +61,16 @@ class TestPromptManager:
     def test_caching(self) -> None:
         """Second load uses cache."""
         manager = PromptManager()
-        result1 = manager.get("coordinator-instructions")
-        result2 = manager.get("coordinator-instructions")
+        result1 = manager.get("standup-agent-instructions")
+        result2 = manager.get("standup-agent-instructions")
         assert result1 is result2  # Same object, not just equal
 
     def test_clear_cache(self) -> None:
         """Cache can be cleared."""
         manager = PromptManager()
-        result1 = manager.get("coordinator-instructions")
+        result1 = manager.get("standup-agent-instructions")
         manager.clear_cache()
-        result2 = manager.get("coordinator-instructions")
+        result2 = manager.get("standup-agent-instructions")
         assert result1 == result2
         assert result1 is not result2  # Different objects after cache clear
 
@@ -121,19 +119,19 @@ class TestPromptManager:
         assert "7" in result
         assert "generate my standup" in result
 
-    def test_get_compiled_summarizer_custom_style(self) -> None:
-        """summarizer-custom-style template compiles with custom_style."""
+    def test_get_compiled_custom_style(self) -> None:
+        """custom-style template compiles with custom_style."""
         result = compile_prompt(
-            "summarizer-custom-style",
+            "custom-style",
             {"custom_style": "Be very concise."},
         )
         assert "Be very concise." in result
         assert "CRITICAL FORMATTING REQUIREMENTS" in result
 
-    def test_get_compiled_summarizer_current_standup(self) -> None:
-        """summarizer-current-standup template compiles with current_standup."""
+    def test_get_compiled_current_standup(self) -> None:
+        """current-standup template compiles with current_standup."""
         result = compile_prompt(
-            "summarizer-current-standup",
+            "current-standup",
             {"current_standup": "Did:\n- Fixed a bug"},
         )
         assert "Did:\n- Fixed a bug" in result
