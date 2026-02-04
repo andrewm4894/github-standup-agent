@@ -1,6 +1,6 @@
 # Architecture
 
-Multi-agent system built with the OpenAI Agents SDK that generates daily standup summaries from GitHub activity.
+Single-agent system built with the OpenAI Agents SDK that generates daily standup summaries from GitHub activity.
 
 ## High-Level Overview
 
@@ -18,16 +18,15 @@ flowchart TB
         run_chat["run_interactive_chat()"]
     end
 
-    subgraph Agents["Agent Layer"]
-        coord["Coordinator Agent"]
-        dg["Data Gatherer Agent"]
-        sum["Summarizer Agent"]
+    subgraph Agent["Agent Layer"]
+        standup["Standup Agent"]
     end
 
     subgraph Tools["Tool Layer"]
         gh_tools["GitHub Tools"]
         slack_tools["Slack Tools"]
         util_tools["Utility Tools"]
+        feedback_tools["Feedback Tools"]
     end
 
     subgraph External["External Services"]
@@ -47,23 +46,17 @@ flowchart TB
     chat --> run_chat
     config --> config_json
 
-    run_standup --> coord
-    run_chat --> coord
+    run_standup --> standup
+    run_chat --> standup
 
-    coord -->|"as_tool()"| dg
-    coord -->|"as_tool()"| sum
-    coord --> util_tools
-    coord --> slack_tools
-
-    dg --> gh_tools
-    dg --> slack_tools
-    sum --> util_tools
+    standup --> gh_tools
+    standup --> slack_tools
+    standup --> util_tools
+    standup --> feedback_tools
 
     gh_tools --> gh_cli
     slack_tools --> slack_api
-    coord --> openai
-    dg --> openai
-    sum --> openai
+    standup --> openai
 
     run_standup --> config_json
     run_standup --> style_md
@@ -73,34 +66,19 @@ flowchart TB
 
 ## Agent Architecture
 
-The system uses the **agents-as-tools** pattern — sub-agents are wrapped via `as_tool()` and invoked by the coordinator rather than using handoffs.
+A single **Standup Agent** handles the entire workflow: gathering GitHub data, fetching team context from Slack, generating formatted standup summaries, and handling user commands.
 
 ```mermaid
 flowchart LR
-    subgraph Coordinator["Coordinator Agent"]
+    subgraph StandupAgent["Standup Agent"]
         direction TB
-        c_tools["Tools:<br/>- gather_data<br/>- create_standup_summary<br/>- copy_to_clipboard<br/>- save_standup_to_file<br/>- publish_standup_to_slack<br/>- confirm_slack_publish<br/>- set_slack_thread<br/>- capture_feedback_rating<br/>- capture_feedback_text"]
+        tools["Tools:<br/>- get_activity_feed / get_activity_summary<br/>- list_prs / list_issues / list_commits / list_reviews / list_comments<br/>- list_assigned_items<br/>- get_pr_details / get_issue_details<br/>- get_team_slack_standups<br/>- publish_standup_to_slack / confirm_slack_publish / set_slack_thread<br/>- copy_to_clipboard / save_standup_to_file<br/>- capture_feedback_rating / capture_feedback_text"]
     end
-
-    subgraph DataGatherer["Data Gatherer Agent (as tool)"]
-        direction TB
-        dg_tools["Tools:<br/>- get_activity_feed<br/>- get_activity_summary<br/>- list_prs / list_issues / list_commits / list_reviews<br/>- list_assigned_items<br/>- get_pr_details / get_issue_details<br/>- get_team_slack_standups"]
-    end
-
-    subgraph Summarizer["Summarizer Agent (as tool)"]
-        direction TB
-        s_tools["Tools:<br/>- get_team_slack_standups<br/>- save_standup_to_file<br/>- copy_to_clipboard"]
-    end
-
-    Coordinator -->|"gather_data"| DataGatherer
-    Coordinator -->|"create_standup_summary"| Summarizer
 ```
 
 | Agent | Model | Temp | Role |
 |-------|-------|------|------|
-| **Coordinator** | gpt-5.2 | 0.5 | Orchestrates workflow, handles user commands (copy, save, publish) |
-| **Data Gatherer** | gpt-5.2 | 0.3 | Collects GitHub activity via `gh` CLI, optionally fetches Slack standups |
-| **Summarizer** | gpt-5.2 | 0.7 | Creates formatted standup summaries using style/example preferences. Uses dynamic instructions (callable) to inject `current_standup` from shared context on each invocation, ensuring the standup text is never lost during refinement iterations. |
+| **Standup Agent** | gpt-5.2 | 0.5 | Gathers GitHub activity, generates formatted standup summaries, handles commands (copy, save, publish), captures feedback. Uses dynamic instructions (callable) to inject `current_standup` from shared context for refinement. |
 
 ## Data Flow (Generate Mode)
 
@@ -109,25 +87,19 @@ sequenceDiagram
     participant User
     participant CLI
     participant Runner
-    participant Coordinator
-    participant DataGatherer
-    participant Summarizer
+    participant Agent as Standup Agent
     participant GitHub as gh CLI
 
     User->>CLI: standup generate --days 1
     CLI->>Runner: run_standup_generation()
     Runner->>Runner: Load config, style, context
-    Runner->>Coordinator: "Generate standup for last 1 day(s)"
+    Runner->>Agent: "Generate standup for last 1 day(s)"
 
-    Coordinator->>DataGatherer: gather_data
-    DataGatherer->>GitHub: get_activity_feed, list_prs, list_issues, list_commits, list_reviews
-    GitHub-->>DataGatherer: Activity data
-    DataGatherer-->>Coordinator: Collected data summary
+    Agent->>GitHub: get_activity_feed, list_prs, list_issues, list_commits, list_reviews
+    GitHub-->>Agent: Activity data
+    Agent->>Agent: Format standup summary
 
-    Coordinator->>Summarizer: create_standup_summary
-    Summarizer-->>Coordinator: Formatted standup
-
-    Coordinator-->>Runner: Final standup
+    Agent-->>Runner: Final standup
     Runner-->>CLI: Output
     CLI-->>User: Display standup
 ```
@@ -136,7 +108,7 @@ sequenceDiagram
 
 ## Context & State
 
-`StandupContext` is a dataclass passed through all agents and tools via `RunContextWrapper`. It holds transient per-run state (not persisted between runs) including:
+`StandupContext` is a dataclass passed through the agent and tools via `RunContextWrapper`. It holds transient per-run state (not persisted between runs) including:
 
 - **Config**: `StandupConfig` instance, `days_back`, `with_history`, `style_instructions`
 - **Collected data**: `collected_prs`, `collected_issues`, `collected_commits`, `collected_reviews`, `collected_activity_feed`
@@ -216,9 +188,9 @@ src/github_standup_agent/
 ├── hooks.py               # Run/Agent hooks for logging
 ├── instrumentation.py     # PostHog integration
 ├── agents/
-│   ├── coordinator.py     # Main orchestrator agent
-│   ├── data_gatherer.py   # GitHub data collection agent
-│   └── summarizer.py      # Summary generation agent
+│   └── standup_agent.py   # Single agent with all tools
+├── prompts/
+│   └── templates/         # Prompt templates (.md files)
 ├── tools/
 │   ├── clipboard.py       # System clipboard
 │   ├── history.py         # History DB tools
@@ -242,9 +214,9 @@ src/github_standup_agent/
 
 ## Key Design Decisions
 
-1. **Agents-as-Tools**: Sub-agents invoked as tools (not handoffs) for more reliable, predictable execution flow.
+1. **Single Agent**: One agent with all tools directly, rather than agents-as-tools. The agent sees its own tool call results in conversation history, eliminating the need for collected data injection.
 2. **Context Passing**: `StandupContext` via `RunContextWrapper` keeps state out of the LLM but accessible to all tools.
 3. **Two-Step Slack Publish**: Preview → confirm → publish prevents accidental posts.
-4. **Dynamic Summarizer Instructions**: The Summarizer's `instructions` is a callable `(ctx, agent) -> str` that appends `current_standup` from shared context on each invocation. This ensures the standup text survives `as_tool()` boundaries (which start with a fresh context window).
+4. **Dynamic Instructions**: The agent's `instructions` is a callable `(ctx, agent) -> str` that appends `current_standup` from shared context on each invocation. This ensures the standup text is available for refinement in chat mode.
 5. **Style Priority**: `style.md` + `config.json` style + `examples.md` are combined, with file-level config taking precedence.
 6. **Session Persistence**: `chat_sessions.db` (SDK-managed conversation persistence) for resumable chat mode.

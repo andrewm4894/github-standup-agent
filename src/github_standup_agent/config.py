@@ -60,9 +60,7 @@ class StandupConfig(BaseSettings):
     # Agent settings
     default_days_back: int = 1
     default_output: str = "stdout"  # stdout, clipboard
-    coordinator_model: str = DEFAULT_MODEL
-    data_gatherer_model: str = DEFAULT_MODEL
-    summarizer_model: str = DEFAULT_MODEL
+    model: str = DEFAULT_MODEL
     temperature: float = 0.7
 
     # Repos to include/exclude (empty = all)
@@ -107,9 +105,7 @@ class StandupConfig(BaseSettings):
             "slack_channel": "STANDUP_SLACK_CHANNEL",
             "default_days_back": "STANDUP_DEFAULT_DAYS_BACK",
             "default_output": "STANDUP_DEFAULT_OUTPUT",
-            "coordinator_model": "STANDUP_COORDINATOR_MODEL",
-            "data_gatherer_model": "STANDUP_DATA_GATHERER_MODEL",
-            "summarizer_model": "STANDUP_SUMMARIZER_MODEL",
+            "model": "STANDUP_MODEL",
             "temperature": "STANDUP_TEMPERATURE",
             "style_instructions": "STANDUP_STYLE_INSTRUCTIONS",
         }

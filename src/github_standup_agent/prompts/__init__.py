@@ -32,7 +32,7 @@ class PromptManager:
         """Load a prompt template by name.
 
         Args:
-            name: Template name (e.g., "coordinator-instructions"). Must match ^[a-zA-Z0-9_-]+$.
+            name: Template name (e.g., "standup-agent-instructions"). Must match ^[a-zA-Z0-9_-]+$.
             fallback: Optional fallback string if template file is not found.
 
         Returns:

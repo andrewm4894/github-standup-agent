@@ -68,16 +68,6 @@ class StandupAgentHooks(AgentHooks[StandupContext]):
         if self.verbose:
             console.print(f"[cyan]Agent [{agent.name}] finished[/cyan]")
 
-    async def on_handoff(
-        self,
-        context: RunContextWrapper[StandupContext],
-        agent: Agent[StandupContext],
-        source: Agent[StandupContext],
-    ) -> None:
-        """Called when one agent hands off to another."""
-        if self.verbose:
-            console.print(f"[yellow]Handoff: {source.name} → {agent.name}[/yellow]")
-
     async def on_tool_start(
         self,
         context: RunContextWrapper[StandupContext],

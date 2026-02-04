@@ -258,7 +258,7 @@ def config(
     ] = None,
     set_model: Annotated[
         str | None,
-        typer.Option("--set-model", help="Set the summarizer model."),
+        typer.Option("--set-model", help="Set the model."),
     ] = None,
     set_style: Annotated[
         str | None,
@@ -305,9 +305,9 @@ def config(
         return
 
     if set_model:
-        cfg.summarizer_model = set_model
+        cfg.model = set_model
         cfg.save()
-        console.print(f"[green]Summarizer model set to: {set_model}[/green]")
+        console.print(f"[green]Model set to: {set_model}[/green]")
         return
 
     if set_style:
@@ -440,9 +440,7 @@ def config(
                 f"[bold]GitHub Username:[/bold] {username}\n"
                 f"[bold]OpenAI API Key:[/bold] {api_key_status}\n"
                 f"[bold]Default Days:[/bold] {cfg.default_days_back}\n"
-                f"[bold]Coordinator Model:[/bold] {cfg.coordinator_model}\n"
-                f"[bold]Data Gatherer Model:[/bold] {cfg.data_gatherer_model}\n"
-                f"[bold]Summarizer Model:[/bold] {cfg.summarizer_model}\n"
+                f"[bold]Model:[/bold] {cfg.model}\n"
                 f"[bold]Temperature:[/bold] {cfg.temperature}\n"
                 f"[bold]Style:[/bold] {style_status}\n"
                 f"[bold]Examples:[/bold] {examples_status}\n"

@@ -9,7 +9,7 @@ from agents import RunConfig, Runner, SQLiteSession
 from rich.console import Console
 from rich.prompt import Prompt
 
-from github_standup_agent.agents.coordinator import create_coordinator_agent
+from github_standup_agent.agents.standup_agent import create_standup_agent
 from github_standup_agent.config import (
     DATA_DIR,
     SESSIONS_DB_FILE,
@@ -196,11 +196,9 @@ async def run_standup_generation(
     # Create agent hooks for verbose mode
     agent_hooks = StandupAgentHooks(verbose=verbose) if verbose else None
 
-    # Create the coordinator agent with configured models and style
-    agent = create_coordinator_agent(
-        model=config.coordinator_model,
-        data_gatherer_model=config.data_gatherer_model,
-        summarizer_model=config.summarizer_model,
+    # Create the standup agent with configured model and style
+    agent = create_standup_agent(
+        model=config.model,
         hooks=agent_hooks,
         style_instructions=style_instructions,
     )
@@ -305,11 +303,9 @@ async def run_interactive_chat(
     # Create agent hooks for verbose mode
     agent_hooks = StandupAgentHooks(verbose=verbose) if verbose else None
 
-    # Create the coordinator agent with style
-    agent = create_coordinator_agent(
-        model=config.coordinator_model,
-        data_gatherer_model=config.data_gatherer_model,
-        summarizer_model=config.summarizer_model,
+    # Create the standup agent with style
+    agent = create_standup_agent(
+        model=config.model,
         hooks=agent_hooks,
         style_instructions=style_instructions,
     )

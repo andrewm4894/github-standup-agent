@@ -82,9 +82,7 @@ standup config --set-slack-channel standups         # Set Slack channel
 |---------------------|-------------|---------|
 | `OPENAI_API_KEY` | OpenAI API key (required) | - |
 | `STANDUP_GITHUB_USER` | GitHub username | Auto-detected |
-| `STANDUP_COORDINATOR_MODEL` | Coordinator agent model | gpt-5.2 |
-| `STANDUP_DATA_GATHERER_MODEL` | Data gatherer model | gpt-5.2 |
-| `STANDUP_SUMMARIZER_MODEL` | Summarizer model | gpt-5.2 |
+| `STANDUP_MODEL` | Agent model | gpt-5.2 |
 | `STANDUP_SLACK_BOT_TOKEN` | Slack bot token | - |
 | `STANDUP_SLACK_CHANNEL` | Default Slack channel | - |
 | `STANDUP_CONFIG_DIR` | Config directory | `./config/` |

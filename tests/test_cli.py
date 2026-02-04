@@ -1,11 +1,19 @@
 """Tests for the CLI interface."""
 
+import re
+
 from typer.testing import CliRunner
 
 from github_standup_agent.cli import app
 from github_standup_agent import __version__
 
 runner = CliRunner()
+
+_ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
+
+
+def _strip_ansi(text: str) -> str:
+    return _ANSI_RE.sub("", text)
 
 
 def test_version():
@@ -33,7 +41,8 @@ def test_generate_help():
     """Test that generate --help shows output options."""
     result = runner.invoke(app, ["generate", "--help"])
     assert result.exit_code == 0
-    assert "stdout" in result.stdout
-    assert "clipboard" in result.stdout
-    assert "file" in result.stdout
-    assert "--output-file" in result.stdout
+    output = _strip_ansi(result.stdout)
+    assert "stdout" in output
+    assert "clipboard" in output
+    assert "file" in output
+    assert "--output-file" in output

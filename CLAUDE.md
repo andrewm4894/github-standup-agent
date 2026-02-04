@@ -22,30 +22,17 @@ uv run pytest tests/test_cli.py -v -k "test_name"
 
 ## Architecture
 
-This is a multi-agent system built with the OpenAI Agents SDK (`openai-agents`) that generates daily standup summaries from GitHub activity.
+This is a single-agent system built with the OpenAI Agents SDK (`openai-agents`) that generates daily standup summaries from GitHub activity.
 
-### Agent Flow
+### Agent
 
-```
-Coordinator Agent (gpt-5.2)
-    │
-    ├── as_tool() → Data Gatherer Agent (gpt-5.2)
-    │                  └── uses gh CLI tools to collect PRs, issues, commits, reviews
-    │                  └── optionally fetches team standups from Slack
-    │
-    └── as_tool() → Summarizer Agent (gpt-5.2)
-                       └── creates formatted standup, can save/copy/publish to Slack
-                       └── uses dynamic instructions to retain current standup during refinement
-```
+A single `Standup Agent` handles the entire workflow: gathering GitHub data via `gh` CLI tools, fetching team context from Slack, and generating formatted standup summaries. It uses dynamic instructions to inject `current_standup` from shared context for reliable refinement in chat mode.
 
 ### Key Components
 
 - **`runner.py`**: Entry point for agent execution. `run_standup_generation()` for one-shot, `run_interactive_chat()` for chat mode
-- **`context.py`**: `StandupContext` dataclass passed through all agents via `RunContextWrapper` - holds collected data, configuration, and current standup state
-- **`agents/`**: Three agents with different responsibilities:
-  - `coordinator.py`: Orchestrates workflow, handles commands like copy/save
-  - `data_gatherer.py`: Collects GitHub data using function tools
-  - `summarizer.py`: Creates summaries using dynamic instructions (callable) that inject `current_standup` from shared context for reliable refinement
+- **`context.py`**: `StandupContext` dataclass passed through the agent via `RunContextWrapper` - holds collected data, configuration, and current standup state
+- **`agents/standup_agent.py`**: Single agent with all tools (GitHub, Slack, clipboard, feedback). Uses dynamic instructions to inject current standup and custom style.
 - **`tools/`**: Function tools decorated with `@function_tool` that wrap `gh` CLI and Slack API calls
 - **`guardrails/`**: Input/output validation (e.g., `validate_days_guardrail` limits lookback range)
 - **`hooks.py`**: `RunHooks` and `AgentHooks` for logging/observability
@@ -97,14 +84,14 @@ Entry point is `standup` (defined in `cli.py` using Typer):
 - `standup history [--list] [--date YYYY-MM-DD] [--clear]`
 - `standup config [--show] [--set-github-user X] [--set-model X] [--set-style X] [--set-slack-channel X] [--init-style] [--edit-style] [--init-examples] [--edit-examples]`
 
-Verbose mode (on by default) shows agent activity: tool calls, handoffs, timing. Use `--quiet` to disable.
+Verbose mode (on by default) shows agent activity: tool calls, timing. Use `--quiet` to disable.
 
 ## Configuration
 
 Environment variables (`.env` takes priority over config file):
 - `OPENAI_API_KEY` (required)
 - `STANDUP_GITHUB_USER` - override auto-detected username
-- `STANDUP_COORDINATOR_MODEL`, `STANDUP_DATA_GATHERER_MODEL`, `STANDUP_SUMMARIZER_MODEL`
+- `STANDUP_MODEL` - override the default model
 - `STANDUP_SLACK_BOT_TOKEN` - Slack bot token for reading/publishing standups
 - `STANDUP_SLACK_CHANNEL` - default Slack channel (can also set via CLI)
 - `STANDUP_CONFIG_DIR` - config directory (default: platform-specific user config dir, e.g., `~/.config/github-standup-agent` on Linux, `~/Library/Application Support/github-standup-agent` on macOS)
@@ -255,10 +242,10 @@ The `StandupContext` includes Slack-related state:
 
 ### Workflow
 
-1. Data Gatherer optionally calls `get_team_slack_standups` if Slack is configured
-2. Summarizer can use team context when generating standups
-3. User requests "publish to slack" - Coordinator shows preview
-4. User confirms - Coordinator calls `confirm_slack_publish` then `publish_standup_to_slack`
+1. Agent calls `get_team_slack_standups` if Slack is configured to fetch team context
+2. Agent uses team context when generating standups
+3. User requests "publish to slack" - agent shows preview
+4. User confirms - agent calls `confirm_slack_publish` then `publish_standup_to_slack`
 
 ## PostHog Instrumentation (optional)
 
