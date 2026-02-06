@@ -254,13 +254,25 @@ Enable agent tracing to PostHog by setting environment variables:
 - `POSTHOG_HOST` - PostHog host (default: https://us.posthog.com)
 - `POSTHOG_DISTINCT_ID` - User identifier (defaults to github_username)
 - `POSTHOG_DEBUG` - Set to "true" for verbose PostHog logging
+- `POSTHOG_PERSONAL_API_KEY` - Enables PostHog prompt management (fetches prompts from PostHog API with local files as fallbacks)
 
 Install the PostHog SDK:
 ```bash
-make install-posthog    # Install with PostHog SDK (v7.7.0+)
+make install-posthog    # Install with PostHog SDK (v7.8.0+)
 # Or install everything:
 make install-all        # Install dev + posthog dependencies
 ```
+
+### Prompt Management (optional)
+
+When `POSTHOG_PERSONAL_API_KEY` is set, agent prompts are fetched from PostHog's prompt management API instead of local `.md` files. Local templates in `prompts/templates/` serve as automatic fallbacks if the API is unreachable. The PostHog SDK caches prompts for 5 minutes.
+
+Prompt names in PostHog must match the local template filenames (without `.md`):
+- `standup-agent-instructions` - Core agent system prompt
+- `custom-style` - Wrapper for user style preferences
+- `current-standup` - Chat refinement context injection
+- `chat-context` - Chat session first-message context
+- `generate-standup` - One-shot generation trigger
 
 ### Custom Events
 
