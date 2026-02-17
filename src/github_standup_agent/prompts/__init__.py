@@ -56,8 +56,10 @@ class PromptManager:
             from posthog.ai.prompts import Prompts
 
             host = os.getenv("POSTHOG_HOST", "https://us.posthog.com")
+            project_api_key = os.getenv("POSTHOG_API_KEY", "")
             self._posthog_prompts = Prompts(
                 personal_api_key=personal_api_key,
+                project_api_key=project_api_key,
                 host=host,
             )
             return self._posthog_prompts
